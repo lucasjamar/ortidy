@@ -39,6 +39,31 @@ class _OrAccessor:
 
         return bin_packing(self._df, capacity=capacity, **kwargs)
 
+    def assignment(self, **kwargs: Any) -> SolveResult:
+        from ortidy.assignment.assignment import assignment
+
+        return assignment(self._df, **kwargs)
+
+    def max_flow(self, source: Any, sink: Any, **kwargs: Any) -> SolveResult:
+        from ortidy.flow.flow import max_flow
+
+        return max_flow(self._df, source, sink, **kwargs)
+
+    def min_cost_flow(self, supplies: Any, **kwargs: Any) -> SolveResult:
+        from ortidy.flow.flow import min_cost_flow
+
+        return min_cost_flow(self._df, supplies, **kwargs)
+
+    def shortest_path(self, source: Any, sink: Any, **kwargs: Any) -> SolveResult:
+        from ortidy.flow.flow import shortest_path
+
+        return shortest_path(self._df, source, sink, **kwargs)
+
+    def distance_matrix(self, **kwargs: Any) -> Any:
+        from ortidy.routing.distance import distance_matrix
+
+        return distance_matrix(self._df, **kwargs)
+
     def route(self, **kwargs: Any) -> SolveResult:
         from ortidy.routing.routing import solve_routing
 
