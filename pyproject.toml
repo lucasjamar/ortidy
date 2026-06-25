@@ -10,8 +10,7 @@ keywords = ["operations-research", "optimization", "ortools", "dataframe", "narw
 dependencies = [
     "narwhals>=1.0",
     # 9.15.x ships a CP-SAT wheel that segfaults on solve() (Windows/py3.12);
-    # 9.12.4544 (protobuf 5.29.x) is the verified-good line. Revisit when a fixed
-    # 9.15+ is released.
+    # 9.12–9.14 are verified-good. Revisit when a fixed 9.15+ is released.
     "ortools>=9.11,<9.15",
     "pandera>=0.20",
 ]
@@ -24,27 +23,32 @@ Repository = "https://github.com/lucasjamar/ortidy"
 pandas = ["pandas>=2.0"]
 polars = ["polars>=1.0"]
 
-[tool.poetry]
-packages = [{ include = "ortidy" }]
-
-[tool.poetry.group.dev.dependencies]
-pytest = ">=8.0"
-pandas = ">=2.0"
-polars = ">=1.0"
-pyarrow = ">=15.0"
-numpy = ">=1.24"
-ruff = ">=0.6"
-mypy = ">=1.10"
-pre-commit = ">=3.7"
-nbstripout = ">=0.7"
-
-[tool.poetry.group.docs.dependencies]
-mkdocs-material = ">=9.5"
-mkdocstrings = { version = ">=0.25", extras = ["python"] }
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pandas>=2.0",
+    "polars>=1.0",
+    "pyarrow>=15.0",
+    "numpy>=1.24",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "nbstripout>=0.7",
+]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
 
 [build-system]
-requires = ["poetry-core>=1.8.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ortidy"]
+
+[tool.uv]
+default-groups = ["dev"]
 
 [tool.ruff]
 target-version = "py310"

@@ -132,3 +132,6 @@ venv.bak/
 .mypy_cache/
 dist/
 site/
+
+# uv selects the dev interpreter from this file — keep it tracked
+!.python-version

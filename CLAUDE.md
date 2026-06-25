@@ -85,7 +85,7 @@ When there is no solution, report *why* where the solver allows it (e.g. CP-SAT 
   - `knapsack` return type lies: docstring/annotation says `pd.Series` but `items.index.map(...)` returns an `Index`. Align with the new return contract.
   - `single_vehicle_route` appends a phantom final row after the loop using an out-of-range index — drop it.
   - `solve_routing` has a dead `if "capacity" in column_names` branch that checks a distance matrix's columns for a capacity field that cannot be there — remove.
-- **Modernize packaging/tooling:** Python floor to 3.10+; drop `[tool.poetry.dev-dependencies]` for `[tool.poetry.group.dev.dependencies]` (or move to PEP 621); unpin to current `ortools`, add `narwhals`; add `ruff` (lint+format, replacing black-only), `mypy`, `pre-commit`; add GitHub Actions CI; add `nbstripout` and strip the ~4 MB of embedded notebook output bloating the repo.
+- **Modernize packaging/tooling:** Python floor to 3.10+; PEP 621 `[project]` metadata with **uv** as the package/dependency manager (PEP 735 `[dependency-groups]`) and **hatchling** as the build backend; unpin to current `ortools` (pinned `<9.15` — its CP-SAT wheel segfaults on Windows/py3.12), add `narwhals`; add `ruff` (lint+format, replacing black-only), `mypy`, `pre-commit`; add GitHub Actions CI; add `nbstripout` and strip the embedded notebook output bloating the repo.
 - **Migrate the working solvers to Narwhals + the return contract** without changing their math: `knapsack`, `multi_knapsack`, `bin_packing`, `solve_routing`. While here, kill the `items.apply(lambda x: solver.BoolVar(...), axis=1)` cross-product variable-construction anti-pattern (rebuild on CP-SAT).
 
 ### P1 — API consistency + new shapes (cheap, high-value)
@@ -124,18 +124,20 @@ When there is no solution, report *why* where the solver allows it (e.g. CP-SAT 
 
 ## Testing
 
-- `pytest`, run via `poetry run pytest`.
+- `pytest`, run via `uv run pytest`.
 - Every solver needs: a correctness test (assert the math), a **golden-file test** against the bundled sample CSVs, an **infeasible-input test** (assert the right status, not an exception), and a **backend-parity test** (same input as pandas *and* Polars yields equivalent results — this is the whole point of Narwhals).
 - Assert solver *status*, not just output shape. Cover the `FEASIBLE`-is-success path explicitly.
 
 ## Dev commands
 
 ```bash
-poetry install --with dev
-poetry run pytest
-poetry run ruff check . && poetry run ruff format --check .
-poetry run mypy ortidy
-poetry run pre-commit run --all-files
+uv sync                 # install runtime + dev deps into .venv (uses .python-version = 3.12)
+uv sync --group docs    # also install the docs toolchain
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
+uv run mypy ortidy
+uv run pre-commit run --all-files
+uv build                # build sdist + wheel (hatchling)
 ```
 
 ## Guardrails for Claude Code
