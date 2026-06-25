@@ -64,6 +64,16 @@ class _OrAccessor:
 
         return distance_matrix(self._df, **kwargs)
 
+    def shift_scheduling(self, workers: Any, **kwargs: Any) -> SolveResult:
+        from ortidy.scheduling.shift_scheduling import shift_scheduling
+
+        return shift_scheduling(self._df, workers, **kwargs)
+
+    def facility_location(self, setup_costs: Any, **kwargs: Any) -> SolveResult:
+        from ortidy.facility.facility_location import facility_location
+
+        return facility_location(self._df, setup_costs, **kwargs)
+
     def route(self, **kwargs: Any) -> SolveResult:
         from ortidy.routing.routing import solve_routing
 
