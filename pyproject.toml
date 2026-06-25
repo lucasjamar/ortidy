@@ -1,22 +1,67 @@
-[tool.poetry]
-name = "pandas-or"
-version = "0.1.3"
-description = "Optimization research with Ortools and Pandas."
-authors = ["lucas.jamar"]
+[project]
+name = "ortidy"
+version = "0.2.0"
+description = "Operations research on tidy dataframes — a backend-agnostic dataframe façade over Google OR-Tools."
+authors = [{ name = "Lucas Jamar" }]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/lucasjamar/pandas-or"
-exclude = ["binder/*", "examples/*", "tests/*"]
+requires-python = ">=3.10"
+keywords = ["operations-research", "optimization", "ortools", "dataframe", "narwhals"]
+dependencies = [
+    "narwhals>=1.0",
+    # 9.15.x ships a CP-SAT wheel that segfaults on solve() (Windows/py3.12);
+    # 9.12.4544 (protobuf 5.29.x) is the verified-good line. Revisit when a fixed
+    # 9.15+ is released.
+    "ortools>=9.11,<9.15",
+    "pandera>=0.20",
+]
 
-[tool.poetry.dependencies]
-python = "^3.7"
-pandas = "^1.2.0"
-ortools = "^9.3.10497"
+[project.urls]
+Homepage = "https://github.com/lucasjamar/ortidy"
+Repository = "https://github.com/lucasjamar/ortidy"
 
-[tool.poetry.dev-dependencies]
-pytest = "^5.2"
-black = "^22.6.0"
+[project.optional-dependencies]
+pandas = ["pandas>=2.0"]
+polars = ["polars>=1.0"]
+
+[tool.poetry]
+packages = [{ include = "ortidy" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=8.0"
+pandas = ">=2.0"
+polars = ">=1.0"
+pyarrow = ">=15.0"
+numpy = ">=1.24"
+ruff = ">=0.6"
+mypy = ">=1.10"
+pre-commit = ">=3.7"
+nbstripout = ">=0.7"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+# numpy 2.x ships stubs using 3.12-only `type` statements that mypy cannot parse
+# under our 3.10 target; we don't expose numpy types, so skip following it.
+[[tool.mypy.overrides]]
+module = ["numpy.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
