@@ -38,6 +38,10 @@ mypy = ">=1.10"
 pre-commit = ">=3.7"
 nbstripout = ">=0.7"
 
+[tool.poetry.group.docs.dependencies]
+mkdocs-material = ">=9.5"
+mkdocstrings = { version = ">=0.25", extras = ["python"] }
+
 [build-system]
 requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"

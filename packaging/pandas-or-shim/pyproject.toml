@@ -1,0 +1,20 @@
+[project]
+name = "pandas-or"
+version = "0.1.4"
+description = "Deprecated — pandas-or has been renamed to `ortidy`. Installing this package installs ortidy."
+authors = [{ name = "Lucas Jamar" }]
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["ortidy>=0.2.0"]
+
+[project.urls]
+Homepage = "https://github.com/lucasjamar/ortidy"
+Repository = "https://github.com/lucasjamar/ortidy"
+
+[build-system]
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{ include = "pandas_or" }]

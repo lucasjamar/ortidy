@@ -1,0 +1,44 @@
+site_name: ortidy
+site_description: Operations research on tidy dataframes — a backend-agnostic façade over Google OR-Tools.
+repo_url: https://github.com/lucasjamar/ortidy
+repo_name: lucasjamar/ortidy
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Concepts:
+      - Result shapes: result-shapes.md
+      - The .or_ accessor: accessor.md
+  - Solvers: solvers.md
+  - API reference: api.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - tables
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: false
