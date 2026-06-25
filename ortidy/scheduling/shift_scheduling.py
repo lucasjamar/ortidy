@@ -42,9 +42,12 @@ def shift_scheduling(
         requirements: Frame of ``(day, shift, required)`` — how many workers each
             shift on each day needs.
         workers: Frame with a worker-id column.
-        day_column, shift_column, required_column: Columns within ``requirements``.
+        day_column: Day column within ``requirements``.
+        shift_column: Shift column within ``requirements``.
+        required_column: Required-headcount column within ``requirements``.
         worker_id_column: Worker-id column within ``workers`` (and the output).
-        min_shifts, max_shifts: Optional per-worker shift-count bounds.
+        min_shifts: Optional minimum number of shifts per worker.
+        max_shifts: Optional maximum number of shifts per worker.
         time_limit: Optional wall-clock limit in seconds.
         random_seed: Solver seed for determinism.
 

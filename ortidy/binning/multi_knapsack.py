@@ -39,10 +39,12 @@ def multi_knapsack(
     Parameters:
         items: Frame with value and weight columns.
         bins: Frame with bin-id and capacity columns.
-        value, weight: Item column names.
+        value: Name of the item value column.
+        weight: Name of the item weight column.
         item_id: Optional explicit item-id column (synthesized if ``None``).
-        bin_id, capacity: Bin column names. ``bin_id`` also names the assignment
-            column added to the returned items frame.
+        bin_id: Bin-id column; also names the assignment column added to the
+            returned items frame.
+        capacity: Bin capacity column.
         time_limit: Optional wall-clock limit in seconds.
         random_seed: Solver seed for determinism.
 

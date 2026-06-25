@@ -134,14 +134,19 @@ def solve_routing(
         max_distance: Per-vehicle max travel distance (distance dimension).
         span_cost_coefficient: Global span cost coefficient (load balancing).
         time_limit: Solver wall-clock limit in seconds.
-        vehicle_id_column, capacity_column, demand_column: Column-name overrides.
+        vehicle_id_column: Vehicle-id column in the ``vehicles`` frame.
+        capacity_column: Vehicle-capacity column in the ``vehicles`` frame.
+        demand_column: Demand column in the ``locations`` frame.
         pickups_deliveries: Optional frame of ``(pickup, delivery)`` node pairs;
             each pair is served by one vehicle, pickup before delivery (VRP-PD).
-        pickup_column, delivery_column: Column names within ``pickups_deliveries``.
+        pickup_column: Pickup-node column within ``pickups_deliveries``.
+        delivery_column: Delivery-node column within ``pickups_deliveries``.
         time_windows: Optional frame of ``(node, open, close)`` arrival windows
             (VRPTW); travel time is taken from the distance matrix plus
             ``service_time`` per stop.
-        node_column, open_column, close_column: Column names within ``time_windows``.
+        node_column: Node column within ``time_windows``.
+        open_column: Window-open column within ``time_windows``.
+        close_column: Window-close column within ``time_windows``.
         service_time: Per-node service time added to travel time (VRPTW).
         time_horizon: Upper bound on the time dimension (VRPTW).
 

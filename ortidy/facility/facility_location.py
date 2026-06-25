@@ -41,7 +41,8 @@ def facility_location(
         setup_costs: Frame of ``(facility, setupCost)`` opening costs. Facility
             labels must match the facility (column) labels in ``costs``.
         id_column: Optional customer-id column in ``costs`` (not a facility).
-        facility_column, setup_cost_column: Columns within ``setup_costs``.
+        facility_column: Facility-label column within ``setup_costs``.
+        setup_cost_column: Opening-cost column within ``setup_costs``.
         assigned_column: Name of the added column holding each customer's facility.
         time_limit: Optional wall-clock limit in seconds.
         random_seed: Solver seed for determinism.

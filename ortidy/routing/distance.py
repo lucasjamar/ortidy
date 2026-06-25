@@ -33,8 +33,10 @@ def distance_matrix(
         locations: Frame of locations.
         method: ``"euclidean"`` (uses ``x``/``y``) or ``"haversine"`` (uses
             ``lat``/``lon``, great-circle distance in kilometres).
-        x, y: Coordinate columns for the euclidean method.
-        lat, lon: Coordinate columns for the haversine method.
+        x: X-coordinate column for the euclidean method.
+        y: Y-coordinate column for the euclidean method.
+        lat: Latitude column for the haversine method.
+        lon: Longitude column for the haversine method.
         id_column: Optional column whose values label the matrix rows/columns.
             Defaults to positional labels ``"0"…"N-1"``.
 
