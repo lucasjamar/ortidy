@@ -113,6 +113,15 @@ def solve_routing(
     vehicle_id_column: str = "vehicleId",
     capacity_column: str = "capacity",
     demand_column: str = "demand",
+    pickups_deliveries: Any = None,
+    pickup_column: str = "pickup",
+    delivery_column: str = "delivery",
+    time_windows: Any = None,
+    node_column: str = "node",
+    open_column: str = "open",
+    close_column: str = "close",
+    service_time: int = 0,
+    time_horizon: int = 100_000,
 ) -> SolveResult:
     """Solve a vehicle-routing problem over a distance matrix.
 
@@ -126,6 +135,15 @@ def solve_routing(
         span_cost_coefficient: Global span cost coefficient (load balancing).
         time_limit: Solver wall-clock limit in seconds.
         vehicle_id_column, capacity_column, demand_column: Column-name overrides.
+        pickups_deliveries: Optional frame of ``(pickup, delivery)`` node pairs;
+            each pair is served by one vehicle, pickup before delivery (VRP-PD).
+        pickup_column, delivery_column: Column names within ``pickups_deliveries``.
+        time_windows: Optional frame of ``(node, open, close)`` arrival windows
+            (VRPTW); travel time is taken from the distance matrix plus
+            ``service_time`` per stop.
+        node_column, open_column, close_column: Column names within ``time_windows``.
+        service_time: Per-node service time added to travel time (VRPTW).
+        time_horizon: Upper bound on the time dimension (VRPTW).
 
     Returns:
         SolveResult whose ``frame`` (same backend as ``df``) is an edge list of
@@ -170,6 +188,7 @@ def solve_routing(
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
     demand: list[float] | None = None
+    has_distance_dim = False
     if vehicle_capacities is not None and locations is not None:
         locations_nw = _nw.to_nw(locations)
         demand = [int(d) for d in _nw.column_to_list(locations_nw, demand_column)]
@@ -196,12 +215,69 @@ def solve_routing(
         routing.GetDimensionOrDie("Distance").SetGlobalSpanCostCoefficient(
             span_cost_coefficient
         )
+        has_distance_dim = True
+
+    if pickups_deliveries is not None:
+        if not has_distance_dim:
+            routing.AddDimension(
+                transit_callback_index, 0, max_distance, True, "Distance"
+            )
+            has_distance_dim = True
+        dist_dim = routing.GetDimensionOrDie("Distance")
+        pd_nw = _nw.to_nw(pickups_deliveries)
+        solver_cp = routing.solver()
+        for pickup, delivery in zip(
+            _nw.column_to_list(pd_nw, pickup_column),
+            _nw.column_to_list(pd_nw, delivery_column),
+            strict=True,
+        ):
+            p_index = manager.NodeToIndex(int(pickup))
+            d_index = manager.NodeToIndex(int(delivery))
+            routing.AddPickupAndDelivery(p_index, d_index)
+            # Same vehicle for the pair, and pickup must precede delivery.
+            solver_cp.Add(routing.VehicleVar(p_index) == routing.VehicleVar(d_index))
+            solver_cp.Add(dist_dim.CumulVar(p_index) <= dist_dim.CumulVar(d_index))
+
+    if time_windows is not None:
+
+        def time_callback(from_index: int, to_index: int) -> int:
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return matrix[from_node][to_node] + service_time
+
+        time_callback_index = routing.RegisterTransitCallback(time_callback)
+        routing.AddDimension(
+            time_callback_index, time_horizon, time_horizon, False, "Time"
+        )
+        time_dim = routing.GetDimensionOrDie("Time")
+        tw_nw = _nw.to_nw(time_windows)
+        for node, open_t, close_t in zip(
+            _nw.column_to_list(tw_nw, node_column),
+            _nw.column_to_list(tw_nw, open_column),
+            _nw.column_to_list(tw_nw, close_column),
+            strict=True,
+        ):
+            time_dim.CumulVar(manager.NodeToIndex(int(node))).SetRange(
+                int(open_t), int(close_t)
+            )
+        # Let every vehicle start anywhere in the horizon, and minimize the
+        # start/end times so routes are pinned to the earliest feasible schedule.
+        for vehicle_id in range(num_vehicles):
+            start = routing.Start(vehicle_id)
+            routing.AddVariableMinimizedByFinalizer(time_dim.CumulVar(start))
+            routing.AddVariableMinimizedByFinalizer(
+                time_dim.CumulVar(routing.End(vehicle_id))
+            )
 
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
     )
-    if demand is not None:
+    if pickups_deliveries is not None:
+        search_parameters.first_solution_strategy = (
+            routing_enums_pb2.FirstSolutionStrategy.PARALLEL_CHEAPEST_INSERTION
+        )
+    if demand is not None or time_windows is not None:
         search_parameters.local_search_metaheuristic = (
             routing_enums_pb2.LocalSearchMetaheuristic.GUIDED_LOCAL_SEARCH
         )
