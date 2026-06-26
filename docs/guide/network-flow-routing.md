@@ -106,5 +106,21 @@ pairs = pd.DataFrame({"pickup": [1], "delivery": [2]})
 ortidy.solve_routing(matrix, vehicles=2, pickups_deliveries=pairs)
 ```
 
+**Optional visits (prize-collecting)** — make stops droppable at a penalty, so the
+solver skips ones too costly to serve. Dropped nodes are in `metadata["dropped"]`:
+
+```python
+penalties = pd.DataFrame({"node": [4], "penalty": [10]})
+result = ortidy.solve_routing(matrix, vehicles=1, penalties=penalties)
+result.metadata["dropped"]   # nodes left unserved
+```
+
+**Fleet sizing** — charge a fixed cost per vehicle used so the solver minimizes how
+many vehicles it dispatches:
+
+```python
+ortidy.solve_routing(matrix, vehicles=5, vehicle_fixed_cost=1000)
+```
+
 Solver controls are parameters, not magic numbers: `max_distance`,
 `span_cost_coefficient`, `time_limit`, `time_horizon`, `service_time`.

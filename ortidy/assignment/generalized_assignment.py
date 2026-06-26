@@ -59,6 +59,7 @@ def generalized_assignment(
     schema.require_nonempty(frame, frame_name="edges")
     schema.require_columns(frame, {task, agent, value, size}, frame_name="edges")
     schema.require_numeric(frame, {value, size}, frame_name="edges")
+    schema.require_numeric(frame, {size}, frame_name="edges", non_negative=True)
 
     tasks = _nw.column_to_list(frame, task)
     agents = _nw.column_to_list(frame, agent)
@@ -67,6 +68,8 @@ def generalized_assignment(
     n = len(tasks)
 
     cap_map = _nw.to_mapping(capacities)
+    if any(v < 0 for v in cap_map.values()):
+        raise ValueError("capacities must be non-negative.")
     agent_ids = _nw.unique_in_order(agents)
     missing = set(agent_ids) - set(cap_map)
     if missing:

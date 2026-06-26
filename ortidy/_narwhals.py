@@ -33,6 +33,10 @@ def to_mapping(value: Any) -> dict[Any, Any]:
         )
     keys = column_to_list(frame, frame.columns[0])
     vals = column_to_list(frame, frame.columns[1])
+    if len(set(keys)) != len(keys):
+        raise ValueError(
+            f"lookup frame has duplicate keys in column {frame.columns[0]!r}."
+        )
     return dict(zip(keys, vals, strict=True))
 
 
@@ -76,6 +80,8 @@ def ensure_id_column(
             raise KeyError(
                 f"id column {id_column!r} not found; columns are {frame.columns}"
             )
+        if frame.get_column(id_column).n_unique() != frame.shape[0]:
+            raise ValueError(f"id column {id_column!r} must have unique values.")
         return frame, id_column, False
     frame = frame.with_row_index(name=ID_COLUMN_DEFAULT)
     return frame, ID_COLUMN_DEFAULT, True

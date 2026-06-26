@@ -23,3 +23,8 @@ Facility location & covering
 .. autofunction:: ortidy.facility.facility_location.facility_location
 
 .. autofunction:: ortidy.covering.set_cover.set_cover
+
+Blending
+--------
+
+.. autofunction:: ortidy.blending.blend.blend

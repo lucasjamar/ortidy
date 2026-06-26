@@ -50,7 +50,7 @@ def bin_packing(
     frame = _nw.to_nw(items)
     schema.require_nonempty(frame, frame_name="items")
     schema.require_columns(frame, {weight}, frame_name="items")
-    schema.require_numeric(frame, {weight}, frame_name="items")
+    schema.require_numeric(frame, {weight}, frame_name="items", non_negative=True)
 
     frame, id_col, synthesized = _nw.ensure_id_column(frame, item_id)
     weights = _nw.column_to_list(frame, weight)

@@ -75,13 +75,14 @@ bool(result)       # True when OPTIMAL or FEASIBLE — a FEASIBLE solution is a 
 | selection | `knapsack` | 0/1 & multidimensional knapsack |
 | selection | `multi_knapsack` | multiple knapsack |
 | selection | `bin_packing` | bin packing (minimize bins) |
-| selection | `assignment` | linear assignment |
+| selection | `assignment` | linear assignment (+ teams / allowed groups) |
 | selection | `generalized_assignment` | GAP (capacity-limited agents) |
 | selection | `facility_location` | uncapacitated facility location |
 | selection | `set_cover` | set cover / partition |
+| selection | `blend` | diet / blending LP (continuous quantities) |
 | edge-flow | `max_flow` / `min_cost_flow` / `shortest_path` | network flow |
 | edge-flow | `transportation` | transportation problem |
-| edge-flow | `solve_routing` (+ `distance_matrix`) | vehicle routing (TSP/VRP/CVRP/VRPTW/pickups) |
+| edge-flow | `solve_routing` (+ `distance_matrix`) | routing (TSP/VRP/CVRP/VRPTW/pickups/optional visits) |
 | interval-schedule | `shift_scheduling` | employee rostering |
 | interval-schedule | `job_shop` | job-shop scheduling |
 

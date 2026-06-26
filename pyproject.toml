@@ -1,6 +1,6 @@
 [project]
 name = "ortidy"
-version = "0.4.0"
+version = "0.5.0"
 description = "Operations research on tidy dataframes — a backend-agnostic dataframe façade over Google OR-Tools."
 authors = [{ name = "Lucas Jamar" }]
 license = "Apache-2.0"
@@ -10,7 +10,6 @@ keywords = ["operations-research", "optimization", "ortools", "dataframe", "narw
 dependencies = [
     "narwhals>=1.0",
     "ortools>=9.12",
-    "pandera>=0.20",
 ]
 
 [project.urls]

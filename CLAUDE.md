@@ -69,7 +69,7 @@ backend-agnostic surface — it works for *any* Narwhals backend.
 > (`ortidy.wrap(df).knapsack(...)`) over a monkeypatch accessor.
 
 ### Schema validation
-Standardize input validation. The old ad-hoc `if not {"value","weight"}.issubset(...)` pattern is a good instinct — formalize it with [Pandera](https://pandera.readthedocs.io/) (which supports Narwhals/Polars) or explicit schema checks. Raise precise, actionable errors (which column is missing, what dtype was expected). Prefer `ValueError`/`KeyError` over the `AttributeError` the old code raises.
+Standardize input validation. The old ad-hoc `if not {"value","weight"}.issubset(...)` pattern is a good instinct — formalized as **explicit, hand-rolled schema checks** in `ortidy/schema.py` (`require_columns` / `require_numeric` / `require_nonempty`). We evaluated Pandera but did **not** adopt it: the checks we need are simple and a hand-rolled module keeps the dependency footprint to just Narwhals + OR-Tools. Raise precise, actionable errors (which column is missing, what dtype was expected). Prefer `ValueError`/`KeyError` over the `AttributeError` the old code raised.
 
 ### Surface solver controls
 No magic numbers buried in function bodies. Expose `time_limit`, `random_seed`/determinism, and optimality `gap` as parameters with sensible defaults. (The old routing code hardcodes `3000` max distance, `100` span coefficient, `1`s time limit — these must become parameters.)

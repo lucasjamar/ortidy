@@ -82,6 +82,26 @@ result.frame[result.frame["selected"]]  # the chosen (agent, task) rows
 Column names default to `agent` / `task` / `cost`; override with `left=` / `right=` /
 `value=`.
 
+**Team caps** — group agents into teams and limit how many each may use (a CP-SAT
+model kicks in automatically):
+
+```python
+ortidy.assignment(edges, teams={"a0": "A", "a1": "A", "a2": "B"}, team_capacity=2)
+```
+
+**Allowed groups** — restrict which combinations of agents may be active together,
+via an `(group, pattern, agent, active)` table enumerating allowed patterns:
+
+```python
+allowed = pd.DataFrame({
+    "group":   ["G", "G"],
+    "pattern": ["p0", "p0"],
+    "agent":   ["a0", "a1"],
+    "active":  [1, 0],          # pattern p0 allows a0 active, a1 inactive
+})
+ortidy.assignment(edges, allowed_groups=allowed)
+```
+
 ## Generalized assignment (GAP)
 
 *What it is:* assign tasks to **capacity-limited** agents to maximize value, where each
@@ -145,3 +165,27 @@ result.frame[result.frame["isSelected"]]
 ```
 
 Pass `partition=True` to require each element covered *exactly* once (set partition).
+
+## Blending / diet (LP)
+
+*What it is:* choose a continuous quantity of each item to minimize cost while meeting
+per-attribute requirements — the classic diet / blending linear program. *When to use
+it:* nutrition planning, feed/fuel/material blending, any "cheapest mix that meets
+specs". `items` has a `cost` column and one column per attribute; `requirements` is a
+tidy `(attribute, min[, max])` table. Adds a continuous `quantity` column.
+
+```python
+items = pd.DataFrame({
+    "food":     ["bread", "milk", "cheese"],
+    "cost":     [1.0, 2.0, 3.0],
+    "protein":  [4.0, 8.0, 7.0],
+    "calories": [90.0, 120.0, 100.0],
+})
+requirements = pd.DataFrame({"attribute": ["protein", "calories"], "min": [10.0, 150.0]})
+
+result = ortidy.blend(items, requirements)
+result.objective                 # minimum total cost
+result.frame[["food", "quantity"]]
+```
+
+Add a `max` column to `requirements` for upper bounds (null = no upper bound).

@@ -14,6 +14,7 @@ from ortidy.assignment.generalized_assignment import generalized_assignment
 from ortidy.binning.bin_packing import bin_packing
 from ortidy.binning.knapsack import knapsack
 from ortidy.binning.multi_knapsack import multi_knapsack
+from ortidy.blending.blend import blend
 from ortidy.covering.set_cover import set_cover
 from ortidy.facility.facility_location import facility_location
 from ortidy.flow.flow import max_flow, min_cost_flow, shortest_path
@@ -24,7 +25,7 @@ from ortidy.scheduling.job_shop import job_shop
 from ortidy.scheduling.shift_scheduling import shift_scheduling
 from ortidy.transportation.transportation import transportation
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "knapsack",
@@ -42,6 +43,7 @@ __all__ = [
     "job_shop",
     "facility_location",
     "set_cover",
+    "blend",
     "data",
     "SolveResult",
     "SolveStatus",

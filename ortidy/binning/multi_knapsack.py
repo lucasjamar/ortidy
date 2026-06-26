@@ -58,8 +58,10 @@ def multi_knapsack(
     schema.require_nonempty(bins_nw, frame_name="bins")
     schema.require_columns(items_nw, {value, weight}, frame_name="items")
     schema.require_numeric(items_nw, {value, weight}, frame_name="items")
+    schema.require_numeric(items_nw, {weight}, frame_name="items", non_negative=True)
     schema.require_columns(bins_nw, {bin_id, capacity}, frame_name="bins")
-    schema.require_numeric(bins_nw, {capacity}, frame_name="bins")
+    schema.require_numeric(bins_nw, {capacity}, frame_name="bins", non_negative=True)
+    schema.require_unique(bins_nw, bin_id, frame_name="bins")
 
     items_nw, id_col, synthesized = _nw.ensure_id_column(items_nw, item_id)
 

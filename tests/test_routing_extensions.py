@@ -20,6 +20,35 @@ def _euclidean_matrix():
     return pd.DataFrame(dist, columns=[str(i) for i in range(len(locs))])
 
 
+def _line_matrix():
+    # 5 stops on a line; stop 4 sits far away so it's expensive to visit.
+    coords = np.array([[0, 0], [1, 0], [2, 0], [3, 0], [100, 0]])
+    d = np.round(np.sqrt(((coords[:, None] - coords[None, :]) ** 2).sum(-1))).astype(
+        int
+    )
+    return pd.DataFrame(d, columns=[str(i) for i in range(5)])
+
+
+def test_penalties_drop_expensive_visit():
+    matrix = _line_matrix()
+    base = ortidy.solve_routing(matrix, vehicles=1)
+    assert base.metadata["dropped"] == []  # all visited without penalties
+
+    penalties = pd.DataFrame({"node": [4], "penalty": [10]})
+    result = ortidy.solve_routing(matrix, vehicles=1, penalties=penalties)
+    assert result.status.is_success
+    assert "4" in result.metadata["dropped"]  # cheaper to drop than detour
+    assert result.objective < base.objective
+
+
+def test_vehicle_fixed_cost_reduces_fleet():
+    matrix = _line_matrix()
+    result = ortidy.solve_routing(matrix, vehicles=3, vehicle_fixed_cost=10_000)
+    out = as_pandas(result.frame)
+    used = (out.groupby("vehicleId")["distance"].sum() > 0).sum()
+    assert used == 1  # fixed cost makes the solver use a single vehicle
+
+
 def test_pickups_and_deliveries_same_vehicle_and_order():
     matrix = _euclidean_matrix()
     pd_pairs = data.pickups_and_deliveries()
