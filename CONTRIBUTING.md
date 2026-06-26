@@ -20,7 +20,7 @@ uv sync --group docs    # also the docs toolchain
 uv run pytest                                    # tests
 uv run ruff check . && uv run ruff format --check .   # lint + format
 uv run mypy ortidy                               # types
-uv run --group docs mkdocs build --strict        # docs
+uv run --group docs sphinx-build -W -b html docs docs/_build/html   # docs
 ```
 
 `uv run pre-commit run --all-files` runs ruff, nbstripout, and mypy locally.

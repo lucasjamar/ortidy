@@ -34,8 +34,10 @@ dev = [
     "nbstripout>=0.7",
 ]
 docs = [
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=1.0.4",
+    "sphinx>=7.0",
+    "furo>=2024.1",
+    "myst-parser>=2.0",
+    "sphinx-autodoc-typehints>=2.0",
 ]
 examples = [
     "plotly>=5.0",
@@ -69,10 +71,11 @@ warn_redundant_casts = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
-# numpy 2.x ships stubs using 3.12-only `type` statements that mypy cannot parse
-# under our 3.10 target; we don't expose numpy types, so skip following it.
+# numpy and sphinx ship sources/stubs using 3.12-only `type` statements that mypy
+# cannot parse under our 3.10 target; neither is part of ortidy's typed surface, so
+# skip following them. (sphinx is only present when the docs group is installed.)
 [[tool.mypy.overrides]]
-module = ["numpy.*"]
+module = ["numpy.*", "sphinx.*"]
 follow_imports = "skip"
 follow_imports_for_stubs = true
 

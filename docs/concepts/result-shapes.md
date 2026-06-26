@@ -1,7 +1,8 @@
 # Result shapes
 
 Every `ortidy` solver produces one of exactly **three** result shapes. Designing
-around these keeps the library a coherent whole rather than a bag of functions.
+around these keeps the library a coherent whole rather than a bag of functions —
+once you know a solver's shape, you know what its output looks like.
 
 ## assignment-matrix
 
@@ -14,30 +15,35 @@ assignment column added.
 | `multi_knapsack` | `binId` (assigned bin, or null) |
 | `bin_packing` | `binId` |
 | `assignment` | `assignedTo` (+ `cost`) |
+| `generalized_assignment` | `assignedTo` |
 | `facility_location` | `assignedTo` |
+| `set_cover` | `isSelected` (boolean) |
 
 ## edge-flow
 
-Values on an edge list. The solver returns your edge frame with a flow column.
+Values on an edge list. The solver returns an edge frame with a flow column.
 
-| Solver | Flow column |
+| Solver | Output |
 | --- | --- |
-| `max_flow` | `flow` |
-| `min_cost_flow` | `flow` |
-| `shortest_path` | `onPath` |
-| `solve_routing` | edge list of trips (`departure → destination`, `distance`, …) |
+| `max_flow` | edges + `flow` |
+| `min_cost_flow` | edges + `flow` |
+| `shortest_path` | edges + `onPath` |
+| `transportation` | edge list `(source, sink, cost, quantity)` |
+| `solve_routing` | edge list of trips with route features |
 
 ## interval-schedule
 
 Intervals placed on a timeline.
 
-| Solver | Result |
+| Solver | Output |
 | --- | --- |
 | `shift_scheduling` | one row per assigned `(workerId, day, shift)` |
+| `job_shop` | tasks + `start` / `end` |
 
-!!! warning "Don't invent a fourth shape"
-    If a new feature doesn't fit one of these three, that's a design discussion
-    before it's an implementation.
+```{warning}
+If a new feature doesn't fit one of these three shapes, that's a design
+discussion before it's an implementation.
+```
 
 ## The result object
 
@@ -52,4 +58,5 @@ bool(result)       # True when OPTIMAL or FEASIBLE
 ```
 
 A **`FEASIBLE` solution is a success**, not a failure — `bool(result)` and
-`result.status.is_success` both treat it as one.
+`result.status.is_success` both treat it as one. See the
+[API reference](../api/result.rst) for the full `SolveResult` and `SolveStatus`.

@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+* **Transportation** (`transportation`) — min-cost shipping from sources to sinks
+  (edge-flow shape).
+* **Generalized assignment** (`generalized_assignment`) — capacity-limited agents
+  with task sizes/values (assignment-matrix shape).
+* **Job shop** (`job_shop`) — sequence job tasks on shared machines, minimize
+  makespan (interval-schedule shape).
+* **Set cover** (`set_cover`) — minimum-cost subsets covering all elements, with a
+  set-partition variant.
+* **Multidimensional knapsack** — `knapsack` accepts a list of weight columns and
+  capacities.
+* Example notebooks covering every solver (`assignment_and_flow`, `scheduling`),
+  runnable on Binder.
+
+### Changed
+* **Docs migrated to Sphinx + furo** (from mkdocs-material): a per-solver guide
+  with problem explanations, deployed to GitHub Pages via the artifact flow.
+
 ## [0.2.0] - 2026-06-26 - Renamed to `ortidy`, rebuilt on Narwhals
 
 ### Added

@@ -4,12 +4,19 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
-  contents: write  # mkdocs gh-deploy pushes to the gh-pages branch
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  docs:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -20,11 +27,20 @@ jobs:
 
       - run: uv sync --group docs
 
-      # Always validate the docs build (strict catches broken refs / nav).
-      - name: Build (strict)
-        run: uv run mkdocs build --strict
+      - name: Build Sphinx site (strict)
+        run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html
 
-      # Publish to GitHub Pages only from main.
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: uv run mkdocs gh-deploy --force
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

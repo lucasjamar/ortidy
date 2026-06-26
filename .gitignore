@@ -144,3 +144,6 @@ site/
 .uv_cache/
 site/
 dist/
+
+# Sphinx build output
+docs/_build/
