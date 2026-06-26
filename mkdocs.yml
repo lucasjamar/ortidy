@@ -1,5 +1,6 @@
 site_name: ortidy
 site_description: Operations research on tidy dataframes — a backend-agnostic façade over Google OR-Tools.
+site_url: https://lucasjamar.github.io/ortidy/
 repo_url: https://github.com/lucasjamar/ortidy
 repo_name: lucasjamar/ortidy
 

@@ -1,0 +1,30 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write  # mkdocs gh-deploy pushes to the gh-pages branch
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync --group docs
+
+      # Always validate the docs build (strict catches broken refs / nav).
+      - name: Build (strict)
+        run: uv run mkdocs build --strict
+
+      # Publish to GitHub Pages only from main.
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: uv run mkdocs gh-deploy --force

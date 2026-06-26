@@ -1,6 +1,9 @@
 # ortidy
 
-![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)
+[![CI](https://github.com/lucasjamar/ortidy/actions/workflows/ci.yml/badge.svg)](https://github.com/lucasjamar/ortidy/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/ortidy.svg)](https://pypi.org/project/ortidy/)
+[![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue.svg)](https://pypi.org/project/ortidy/)
+[![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://lucasjamar.github.io/ortidy/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/lucasjamar/ortidy/blob/main/LICENSE.md)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 
