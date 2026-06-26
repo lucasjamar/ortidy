@@ -10,7 +10,6 @@ keywords = ["operations-research", "optimization", "ortools", "dataframe", "narw
 dependencies = [
     "narwhals>=1.0",
     "ortools>=9.12",
-    "pandera>=0.20",
 ]
 
 [project.urls]

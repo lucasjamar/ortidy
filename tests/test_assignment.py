@@ -84,6 +84,79 @@ def test_missing_column_raises():
         ortidy.assignment(edges)
 
 
+def _team_edges():
+    # 4 cheap workers in team A, 4 expensive in team B, 4 tasks.
+    rows = []
+    for w in ["a0", "a1", "a2", "a3"]:
+        for t in ["t0", "t1", "t2", "t3"]:
+            rows.append({"agent": w, "task": t, "cost": 1})
+    for w in ["b0", "b1", "b2", "b3"]:
+        for t in ["t0", "t1", "t2", "t3"]:
+            rows.append({"agent": w, "task": t, "cost": 9})
+    return pd.DataFrame(rows)
+
+
+def test_teams_cap_limits_agents_per_team(backend):
+    edges = _team_edges()
+    if backend == "polars":
+        import polars as pl
+
+        edges = pl.from_pandas(edges)
+    teams = {f"a{i}": "A" for i in range(4)} | {f"b{i}": "B" for i in range(4)}
+    result = ortidy.assignment(edges, teams=teams, team_capacity=2)
+    assert result.status.is_success
+
+    out = as_pandas(result.frame)
+    chosen = out[out["selected"]]
+    used_per_team = chosen["agent"].map(teams).value_counts().to_dict()
+    assert used_per_team.get("A", 0) <= 2
+    assert used_per_team.get("B", 0) <= 2
+
+
+def test_allowed_groups_restricts_active_set():
+    # Group G = {w0, w1}; the only allowed pattern has w0 active, w1 inactive.
+    edges = pd.DataFrame(
+        {
+            "agent": ["w0", "w0", "w1", "w1", "w2", "w2"],
+            "task": ["t0", "t1", "t0", "t1", "t0", "t1"],
+            "cost": [1, 1, 1, 1, 5, 5],
+        }
+    )
+    allowed = pd.DataFrame(
+        {
+            "group": ["G", "G"],
+            "pattern": ["p0", "p0"],
+            "agent": ["w0", "w1"],
+            "active": [1, 0],
+        }
+    )
+    result = ortidy.assignment(edges, allowed_groups=allowed)
+    assert result.status.is_success
+    active = set(as_pandas(result.frame).query("selected")["agent"])
+    assert "w1" not in active  # forbidden by the only allowed pattern
+
+
+def test_allowed_groups_either_or():
+    edges = pd.DataFrame(
+        {
+            "agent": ["w0", "w0", "w1", "w1", "w2", "w2"],
+            "task": ["t0", "t1", "t0", "t1", "t0", "t1"],
+            "cost": [1, 1, 1, 1, 5, 5],
+        }
+    )
+    allowed = pd.DataFrame(
+        {
+            "group": ["G", "G", "G", "G"],
+            "pattern": ["p0", "p0", "p1", "p1"],
+            "agent": ["w0", "w1", "w0", "w1"],
+            "active": [1, 0, 0, 1],
+        }
+    )
+    result = ortidy.assignment(edges, allowed_groups=allowed)
+    active = set(as_pandas(result.frame).query("selected")["agent"])
+    assert not ({"w0", "w1"} <= active)  # at most one of w0/w1 active
+
+
 def test_backend_parity():
     pdf = ortidy.assignment(_edges("pandas"))
     pol = ortidy.assignment(_edges("polars"))

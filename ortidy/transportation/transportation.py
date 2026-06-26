@@ -63,6 +63,8 @@ def transportation(
 
     supply_map = {k: round(v) for k, v in _nw.to_mapping(supply).items()}
     demand_map = {k: round(v) for k, v in _nw.to_mapping(demand).items()}
+    if any(v < 0 for v in (*supply_map.values(), *demand_map.values())):
+        raise ValueError("supply and demand quantities must be non-negative.")
     if sum(supply_map.values()) != sum(demand_map.values()):
         raise ValueError(
             f"unbalanced transportation problem: total supply "

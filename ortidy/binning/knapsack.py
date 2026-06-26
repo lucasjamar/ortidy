@@ -58,7 +58,9 @@ def knapsack(
         )
     schema.require_nonempty(frame, frame_name="items")
     schema.require_columns(frame, {value, *weight_columns}, frame_name="items")
-    schema.require_numeric(frame, {value, *weight_columns}, frame_name="items")
+    schema.require_numeric(
+        frame, {value, *weight_columns}, frame_name="items", non_negative=True
+    )
 
     frame, id_col, synthesized = _nw.ensure_id_column(frame, item_id)
 

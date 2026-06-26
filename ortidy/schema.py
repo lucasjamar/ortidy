@@ -20,8 +20,19 @@ def require_columns(frame: nw.DataFrame, columns: set[str], *, frame_name: str) 
         )
 
 
-def require_numeric(frame: nw.DataFrame, columns: set[str], *, frame_name: str) -> None:
-    """Raise ``ValueError`` if any named column is non-numeric."""
+def require_numeric(
+    frame: nw.DataFrame,
+    columns: set[str],
+    *,
+    frame_name: str,
+    non_negative: bool = False,
+    allow_null: bool = False,
+) -> None:
+    """Validate that named columns are numeric (and, optionally, clean).
+
+    Raises ``ValueError`` if any column is non-numeric, contains nulls (unless
+    ``allow_null``), or — when ``non_negative`` — holds a negative value.
+    """
     schema = frame.schema
     bad = {
         col: str(schema[col])
@@ -32,6 +43,29 @@ def require_numeric(frame: nw.DataFrame, columns: set[str], *, frame_name: str) 
         raise ValueError(
             f"{frame_name} column(s) must be numeric, but got non-numeric dtypes: "
             f"{bad}."
+        )
+    present = [c for c in columns if c in frame.columns]
+    if not allow_null:
+        null_cols = [c for c in present if frame.get_column(c).is_null().any()]
+        if null_cols:
+            raise ValueError(
+                f"{frame_name} column(s) {sorted(null_cols)} contain null values."
+            )
+    if non_negative:
+        neg_cols = [c for c in present if (frame.get_column(c) < 0).any()]
+        if neg_cols:
+            raise ValueError(
+                f"{frame_name} column(s) {sorted(neg_cols)} must be non-negative."
+            )
+
+
+def require_unique(frame: nw.DataFrame, column: str, *, frame_name: str) -> None:
+    """Raise ``ValueError`` if ``column`` has duplicate values (e.g. an id column)."""
+    series = frame.get_column(column)
+    if series.n_unique() != frame.shape[0]:
+        raise ValueError(
+            f"{frame_name} column {column!r} must have unique values "
+            "(found duplicates)."
         )
 
 

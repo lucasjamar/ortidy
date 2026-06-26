@@ -122,6 +122,8 @@ def solve_routing(
     close_column: str = "close",
     service_time: int = 0,
     time_horizon: int = 100_000,
+    penalties: Any = None,
+    vehicle_fixed_cost: int | None = None,
 ) -> SolveResult:
     """Solve a vehicle-routing problem over a distance matrix.
 
@@ -149,6 +151,12 @@ def solve_routing(
         close_column: Window-close column within ``time_windows``.
         service_time: Per-node service time added to travel time (VRPTW).
         time_horizon: Upper bound on the time dimension (VRPTW).
+        penalties: Optional ``(node, penalty)`` frame or ``{node: penalty}`` mapping
+            making those visits *optional* — a node may be dropped at its penalty
+            cost (prize-collecting routing). Dropped nodes appear in
+            ``metadata["dropped"]``.
+        vehicle_fixed_cost: Optional fixed cost charged per vehicle that is actually
+            used, so the solver minimizes the number of vehicles (fleet sizing).
 
     Returns:
         SolveResult whose ``frame`` (same backend as ``df``) is an edge list of
@@ -274,6 +282,14 @@ def solve_routing(
                 time_dim.CumulVar(routing.End(vehicle_id))
             )
 
+    if penalties is not None:
+        # Optional visits: each penalized node may be dropped at its penalty cost.
+        for node, penalty in _nw.to_mapping(penalties).items():
+            routing.AddDisjunction([manager.NodeToIndex(int(node))], int(penalty))
+
+    if vehicle_fixed_cost is not None:
+        routing.SetFixedCostOfAllVehicles(int(vehicle_fixed_cost))
+
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
@@ -299,10 +315,15 @@ def solve_routing(
 
     node_to_name = {i: name for i, name in enumerate(column_names)}
     routes: dict[str, list] = {}
+    visited: set[int] = set()
     for vehicle_id in vehicle_ids:
         part = _extract_vehicle_route(routing, manager, solution, vehicle_id, demand)
+        visited.update(part["departure"])
         for key, values in part.items():
             routes.setdefault(key, []).extend(values)
+
+    # Nodes that were dropped (optional visits not served by any vehicle).
+    dropped = [node_to_name[n] for n in range(len(column_names)) if n not in visited]
 
     # Map node indices to location names before computing features, so the
     # shifted ``destination`` column carries names too.
@@ -314,5 +335,9 @@ def solve_routing(
         frame=_nw.to_native(frame),
         status=_routing_status(solved=True),
         objective=solution.ObjectiveValue(),
-        metadata={"solver": "ROUTING", "num_vehicles": num_vehicles},
+        metadata={
+            "solver": "ROUTING",
+            "num_vehicles": num_vehicles,
+            "dropped": dropped,
+        },
     )
