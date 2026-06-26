@@ -36,4 +36,4 @@ Bump the version in **all four** places, then rebuild:
 - `pyproject.toml` → `[project] version`
 - `ortidy/__init__.py` → `__version__`
 - `CITATION.cff` → `version`
-- `RELEASE.md` → new changelog entry
+- `CHANGELOG.md` → new changelog entry

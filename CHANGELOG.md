@@ -1,4 +1,20 @@
+# Changelog
+
+All notable changes to this project are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
+to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [0.2.0] - 2026-06-26 - Renamed to `ortidy`, rebuilt on Narwhals
+
+### Added
+* **Assignment & facility location** (assignment-matrix shape): `assignment`
+  (linear sum assignment) and `facility_location` (uncapacitated).
+* **Network flow** (edge-flow shape): `max_flow`, `min_cost_flow`, `shortest_path`.
+* **Shift scheduling** (`shift_scheduling`) — the interval-schedule result shape.
+* **Routing promises**: VRPTW (time windows) and pickups & deliveries in
+  `solve_routing`, plus a `distance_matrix` helper (euclidean / haversine) so
+  routing can take locations instead of a precomputed matrix.
+* mkdocs-material documentation and a `pandas-or` deprecation shim package.
 
 ### Changed
 * **Renamed `pandas-or` → `ortidy`** ("OR on tidy dataframes"). The importable
@@ -22,8 +38,12 @@
   (correctness, golden-file, infeasible-status, backend-parity).
 
 ### Tooling
-* Python floor raised to 3.10; `ruff`, `mypy`, `pre-commit`, GitHub Actions CI;
-  stripped ~8 MB of embedded notebook output.
+* Python floor raised to 3.10; **uv** for dependency management (PEP 735
+  `[dependency-groups]`) with **hatchling** as the build backend; `ruff`, `mypy`,
+  `pre-commit`, and GitHub Actions CI (test matrix + strict docs build).
+* Pinned `ortools <9.15` — its CP-SAT wheel segfaults on `solve()` (Windows /
+  py3.12); 9.12–9.14 are verified-good.
+* Stripped ~8 MB of embedded notebook output.
 
 ## [0.1.3] - 2022-08-07
 

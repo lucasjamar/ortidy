@@ -1,0 +1,21 @@
+# Files Claude Code should skip when reading/searching the project.
+# Generated, vendored, or noisy artifacts — not useful as context.
+
+# Virtual environments
+.venv/
+
+# Build artifacts
+dist/
+build/
+site/
+*.egg-info/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.uv_cache/
+__pycache__/
+
+# Lockfile (large, machine-generated)
+uv.lock

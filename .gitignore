@@ -135,3 +135,12 @@ site/
 
 # uv selects the dev interpreter from this file — keep it tracked
 !.python-version
+
+##########################
+# ortidy / tooling
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.uv_cache/
+site/
+dist/
