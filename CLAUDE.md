@@ -46,7 +46,7 @@ These are the through-lines that make this a coherent library rather than a bag 
 
 ### Consistent return contract
 Every solver returns the user's original frame (same backend, same rows where applicable) with assignment columns added, plus a status. There are exactly **three result shapes** — design every feature to fit one of them:
-- **assignment-matrix** — rows mapped to columns/bins/resources (knapsack, multi-knapsack, bin packing, assignment, transportation, facility location).
+- **selection** (formerly "assignment-matrix") — the input table is annotated with what was chosen: an item, a bin, or an edge in a tidy edge list (knapsack, multi-knapsack, bin packing, assignment, generalized assignment, facility location, set cover). **Inputs are long/tidy edge lists, not wide matrices** — one row per allowed pairing, so sparse problems omit rows.
 - **edge-flow** — values on an edge list (max-flow, min-cost-flow, shortest path, transshipment).
 - **interval-schedule** — intervals placed on a timeline (shift scheduling, job-shop, RCPSP).
 
@@ -96,7 +96,7 @@ When there is no solution, report *why* where the solver allows it (e.g. CP-SAT 
 - **Migrate the working solvers to Narwhals + the return contract** without changing their math: `knapsack`, `multi_knapsack`, `bin_packing`, `solve_routing`. While here, kill the `items.apply(lambda x: solver.BoolVar(...), axis=1)` cross-product variable-construction anti-pattern (rebuild on CP-SAT).
 
 ### P1 — API consistency + new shapes (cheap, high-value)
-- **Assignment & transportation** (assignment-matrix shape). Linear assignment via `ortools.graph.python.linear_sum_assignment`; generalized assignment (GAP) and transportation/transshipment via CP-SAT/MIP. A cost matrix *is* a dataframe — the most natural fit and the cheapest big win.
+- **Assignment & transportation** (selection / edge-flow). Linear assignment via `ortools.graph.python.linear_sum_assignment`; generalized assignment (GAP) and transportation via CP-SAT / min-cost-flow. Inputs are **long tidy edge lists** (one row per allowed pairing) — not wide cost matrices — which handles sparsity and matches the flow API.
 - **Network flow** (edge-flow shape). Max-flow, min-cost-flow, shortest path via the dedicated `ortools.graph.python` solvers. Naturally an edge-list frame.
 - **Finish the routing promises** already advertised in the old README: **time windows (VRPTW)** and **pickups & deliveries**. Also expose multiple depots and heterogeneous fleets.
 - **Separate distance-matrix construction from routing.** The old API secretly requires `df` to be a precomputed distance matrix. Add a helper that builds the matrix from lat/long (haversine) or x/y (euclidean) so the routing API takes *locations* — what users actually have.

@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-26 - Long-form (tidy) inputs
+
+### Changed (breaking)
+* **`assignment`, `generalized_assignment`, `facility_location`, `transportation`,
+  and `set_cover` now take long, tidy edge lists** instead of wide matrices — one
+  row per allowed pairing, so sparse problems are expressed by omitting rows. This
+  is more on-brand (tidy data), handles sparsity and forbidden pairs naturally, and
+  unifies these solvers with the network-flow API.
+  - `assignment(edges, left=, right=, value=)` → edges + a `selected` column.
+  - `generalized_assignment(edges, capacities, ...)` — one `(task, agent, value,
+    size)` edge frame replaces the two value/size matrices.
+  - `facility_location(edges, setup_costs)` → edges + `selected`.
+  - `transportation(edges, supply, demand)` — `(source, sink, cost)` lanes.
+  - `set_cover(membership, costs)` — `(subset, element)` pairs + a subset cost table.
+* Per-node inputs (capacities / supply / demand / setup costs) accept a mapping or a
+  two-column `(node, value)` frame.
+* The first result shape is renamed **selection** (was "assignment-matrix") — these
+  solvers annotate the input rows with what was chosen.
+
+The wide-matrix entry points are removed; `melt` a matrix to long form if needed.
+
 ## [0.3.0] - 2026-06-26 - New solvers + Sphinx docs
 
 ### Added

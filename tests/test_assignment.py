@@ -1,4 +1,4 @@
-"""Linear assignment tests."""
+"""Linear assignment tests (long edge-list form)."""
 
 from __future__ import annotations
 
@@ -10,10 +10,15 @@ from ortidy.result import SolveStatus
 from tests.conftest import as_pandas, native_type_name
 
 
-def _cost_matrix(backend: str):
-    # 3×3 assignment; optimal min-cost matching is 0→t1, 1→t0, 2→t2 = 4.
-    data = {"t0": [4, 1, 3], "t1": [2, 5, 2], "t2": [8, 4, 1]}
-    df = pd.DataFrame(data)
+def _edges(backend: str):
+    # Long form of a 3x3 cost matrix; optimal min-cost matching is 4.
+    df = pd.DataFrame(
+        {
+            "agent": ["a0", "a0", "a0", "a1", "a1", "a1", "a2", "a2", "a2"],
+            "task": ["t0", "t1", "t2", "t0", "t1", "t2", "t0", "t1", "t2"],
+            "cost": [4, 2, 8, 1, 5, 4, 3, 2, 1],
+        }
+    )
     if backend == "polars":
         import polars as pl
 
@@ -22,39 +27,66 @@ def _cost_matrix(backend: str):
 
 
 def test_minimizes_total_cost(backend):
-    res = ortidy.assignment(_cost_matrix(backend))
-    assert res.status is SolveStatus.OPTIMAL
-    assert res.objective == 4
-    out = as_pandas(res.frame)
-    assert list(out["assignedTo"]) == ["t1", "t0", "t2"]
-    assert out["cost"].sum() == 4
+    result = ortidy.assignment(_edges(backend))
+    assert result.status is SolveStatus.OPTIMAL
+    assert result.objective == 4
+
+    out = as_pandas(result.frame)
+    chosen = out[out["selected"]]
+    assert set(zip(chosen["agent"], chosen["task"], strict=False)) == {
+        ("a0", "t1"),
+        ("a1", "t0"),
+        ("a2", "t2"),
+    }
+    # Each agent is assigned exactly one task.
+    assert chosen.groupby("agent").size().eq(1).all()
+    assert chosen["cost"].sum() == 4
 
 
-def test_maximize(backend):
-    res = ortidy.assignment(_cost_matrix(backend), maximize=True)
-    assert res.status is SolveStatus.OPTIMAL
-    # Max-value matching: 0→t2(8), 1→t1(5), 2→? remaining t0(3) = 16.
-    assert res.objective == 16
+def test_maximize():
+    result = ortidy.assignment(_edges("pandas"), maximize=True)
+    assert result.objective == 16
+
+
+def test_sparse_problem():
+    # a2 can only do t2 — still a feasible perfect matching.
+    edges = pd.DataFrame(
+        {
+            "agent": ["a0", "a0", "a1", "a1", "a2"],
+            "task": ["t0", "t1", "t0", "t1", "t2"],
+            "cost": [4, 2, 1, 5, 3],
+        }
+    )
+    result = ortidy.assignment(edges)
+    assert result.status is SolveStatus.OPTIMAL
+    out = as_pandas(result.frame)
+    chosen = out[out["selected"]]
+    assert ("a2", "t2") in set(zip(chosen["agent"], chosen["task"], strict=False))
+
+
+def test_infeasible_when_no_perfect_matching():
+    # Two agents both only able to take the same single task.
+    edges = pd.DataFrame({"agent": ["a0", "a1"], "task": ["t0", "t0"], "cost": [1, 1]})
+    result = ortidy.assignment(edges)
+    assert result.status is SolveStatus.INFEASIBLE
+
+
+def test_custom_column_names():
+    edges = pd.DataFrame({"worker": ["w"], "job": ["j"], "price": [5]})
+    result = ortidy.assignment(edges, left="worker", right="job", value="price")
+    assert result.status is SolveStatus.OPTIMAL
+    assert as_pandas(result.frame)["selected"].sum() == 1
+
+
+def test_missing_column_raises():
+    edges = pd.DataFrame({"agent": ["a"], "task": ["t"]})  # no cost
+    with pytest.raises(KeyError, match="cost"):
+        ortidy.assignment(edges)
 
 
 def test_backend_parity():
-    pd_res = ortidy.assignment(_cost_matrix("pandas"))
-    pol_res = ortidy.assignment(_cost_matrix("polars"))
-    assert native_type_name(pd_res.frame) == "pandas"
-    assert native_type_name(pol_res.frame) == "polars"
-    assert pd_res.objective == pol_res.objective
-
-
-def test_more_agents_than_tasks_raises():
-    df = pd.DataFrame({"t0": [1, 2, 3]})  # 3 agents, 1 task
-    with pytest.raises(ValueError, match="at least as many tasks"):
-        ortidy.assignment(df)
-
-
-def test_id_column_excluded_from_tasks(backend):
-    df = pd.DataFrame({"agent": ["a", "b"], "t0": [1, 9], "t1": [9, 1]})
-    res = ortidy.assignment(df, id_column="agent")
-    assert res.status is SolveStatus.OPTIMAL
-    out = as_pandas(res.frame)
-    assert list(out["assignedTo"]) == ["t0", "t1"]
-    assert "agent" in out.columns
+    pdf = ortidy.assignment(_edges("pandas"))
+    pol = ortidy.assignment(_edges("polars"))
+    assert native_type_name(pdf.frame) == "pandas"
+    assert native_type_name(pol.frame) == "polars"
+    assert pdf.objective == pol.objective

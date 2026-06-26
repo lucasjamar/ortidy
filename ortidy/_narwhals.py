@@ -9,11 +9,39 @@ dataframes.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import narwhals.stable.v1 as nw
 
 ID_COLUMN_DEFAULT = "__ortidy_row_id__"
+
+
+def to_mapping(value: Any) -> dict[Any, Any]:
+    """Coerce a per-node input to a ``{node: value}`` dict.
+
+    Accepts a mapping directly, or a native two-column frame whose first column is
+    the node id and second is the value (the tidy form of a lookup table).
+    """
+    if isinstance(value, Mapping):
+        return dict(value)
+    frame = to_nw(value)
+    if len(frame.columns) < 2:
+        raise ValueError(
+            "expected a mapping or a 2-column (node, value) frame; "
+            f"got columns {frame.columns}."
+        )
+    keys = column_to_list(frame, frame.columns[0])
+    vals = column_to_list(frame, frame.columns[1])
+    return dict(zip(keys, vals, strict=True))
+
+
+def unique_in_order(values: list) -> list:
+    """Distinct values, preserving first-seen order."""
+    seen: dict[Any, None] = {}
+    for v in values:
+        seen.setdefault(v, None)
+    return list(seen)
 
 
 def to_nw(frame: Any) -> nw.DataFrame:

@@ -49,14 +49,17 @@ result.frame[result.frame["onPath"] == 1]
 
 *What it is:* ship goods from sources to sinks at minimum total cost, respecting each
 source's supply and each sink's demand. *When to use it:* logistics, distribution,
-matching production to consumption. Input is a sources×sinks cost matrix plus supply
-and demand; total supply must equal total demand.
+matching production to consumption. Input is a tidy **edge list** of `(source, sink, cost)`
+lanes (omit forbidden lanes) plus supply and demand; total supply must equal total demand.
 
 ```python
-costs = pd.DataFrame({"src": ["S0", "S1"], "k0": [4, 5], "k1": [3, 2], "k2": [1, 3]})
+edges = pd.DataFrame({
+    "source": ["S0", "S0", "S0", "S1", "S1", "S1"],
+    "sink":   ["k0", "k1", "k2", "k0", "k1", "k2"],
+    "cost":   [4,    3,    1,    5,    2,    3],
+})
 result = ortidy.transportation(
-    costs, supply={"S0": 10, "S1": 15}, demand={"k0": 8, "k1": 9, "k2": 8},
-    source_id_column="src",
+    edges, supply={"S0": 10, "S1": 15}, demand={"k0": 8, "k1": 9, "k2": 8},
 )
 result.objective                            # total shipping cost
 result.frame[result.frame["quantity"] > 0]  # the shipments
