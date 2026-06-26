@@ -1,8 +1,9 @@
 # Assignment & packing
 
-Solvers in the **assignment-matrix** shape map rows to columns / bins / resources.
-Each returns your input frame with an assignment column added — so the answer lands
-right back in the dataframe you started with.
+Solvers in the **selection** shape annotate your input table with what was chosen —
+an item, a bin, or an edge — so the answer lands right back in the dataframe you
+started with. Several take a tidy **edge list** (one row per allowed pairing), which
+makes sparse problems natural: just omit the rows that can't happen.
 
 ## Knapsack
 
@@ -62,18 +63,24 @@ result.frame["binId"].nunique()  # == objective
 
 ## Assignment
 
-A cost matrix *is* a dataframe: rows are agents, columns are tasks. Assign each agent
-to one task, minimizing total cost (or `maximize=True`). Adds `assignedTo` and `cost`.
+Assign each agent to one task, minimizing total cost (or `maximize=True`). Input is a
+tidy **edge list** — one row per allowed `(agent, task)` pair with its cost — so a
+sparse problem (an agent can only do *some* tasks) is just fewer rows. Adds a
+`selected` boolean column.
 
 ```python
-costs = pd.DataFrame({"t0": [4, 1, 3], "t1": [2, 5, 2], "t2": [8, 4, 1]})
-
-result = ortidy.assignment(costs)
-result.objective                  # 4
-list(result.frame["assignedTo"])  # ['t1', 't0', 't2']
+edges = pd.DataFrame({
+    "agent": ["a0", "a0", "a1", "a1", "a2"],
+    "task":  ["t0", "t1", "t0", "t1", "t2"],
+    "cost":  [4,    2,    1,    5,    3],
+})
+result = ortidy.assignment(edges)
+result.objective                       # total cost of the matching
+result.frame[result.frame["selected"]]  # the chosen (agent, task) rows
 ```
 
-Use `id_column="agent"` if a column labels the agents (it won't be treated as a task).
+Column names default to `agent` / `task` / `cost`; override with `left=` / `right=` /
+`value=`.
 
 ## Generalized assignment (GAP)
 
@@ -81,13 +88,19 @@ Use `id_column="agent"` if a column labels the agents (it won't be treated as a 
 task consumes a *size* on its agent. *When to use it:* workforce/job allocation, cloud
 bin-packing, anything where agents have a budget and tasks have a cost and a payoff.
 
-```python
-values = pd.DataFrame({"a0": [10, 8, 5], "a1": [6, 9, 7]})   # value of task t on agent a
-sizes = pd.DataFrame({"a0": [3, 4, 2], "a1": [2, 3, 4]})     # size consumed
-result = ortidy.generalized_assignment(values, sizes, capacities={"a0": 5, "a1": 6})
+An **edge list** with a `value` and a `size` per `(task, agent)` pair, plus per-agent
+capacities (a mapping or a `(agent, capacity)` frame):
 
-result.objective              # 24
-list(result.frame["assignedTo"])
+```python
+edges = pd.DataFrame({
+    "task":  ["t0", "t0", "t1", "t1", "t2", "t2"],
+    "agent": ["a0", "a1", "a0", "a1", "a0", "a1"],
+    "value": [10,   6,    8,    9,    5,    7],
+    "size":  [3,    2,    4,    3,    2,    4],
+})
+result = ortidy.generalized_assignment(edges, capacities={"a0": 5, "a1": 6})
+result.objective                       # 24
+result.frame[result.frame["selected"]]
 ```
 
 Pass `require_all=True` to force every task to be assigned (infeasible if capacity is
@@ -95,15 +108,19 @@ too small), or leave it `False` to allow tasks to go unassigned.
 
 ## Facility location
 
-Given a customer×facility cost matrix and a per-facility opening cost, decide which
-facilities to open and assign each customer to one — minimizing opening + assignment
-cost. Adds `assignedTo`; opened facilities are in `metadata["opened"]`.
+From an **edge list** of `(customer, facility, cost)` plus a per-facility opening cost,
+decide which facilities to open and assign each customer to one — minimizing opening +
+assignment cost. Adds `selected`; opened facilities are in `metadata["opened"]`.
 
 ```python
-costs = pd.DataFrame({"f0": [1, 1, 9], "f1": [9, 9, 1]})       # 3 customers
+edges = pd.DataFrame({
+    "customer": [0, 0, 1, 1, 2, 2],
+    "facility": ["f0", "f1", "f0", "f1", "f0", "f1"],
+    "cost":     [1, 9, 1, 9, 9, 1],
+})
 setup = pd.DataFrame({"facility": ["f0", "f1"], "setupCost": [2, 100]})
 
-result = ortidy.facility_location(costs, setup)
+result = ortidy.facility_location(edges, setup)
 result.metadata["opened"]   # ['f0']  — the second facility is too expensive to open
 ```
 
@@ -111,16 +128,18 @@ result.metadata["opened"]   # ['f0']  — the second facility is too expensive t
 
 *What it is:* pick the cheapest collection of subsets so every element is covered.
 *When to use it:* crew/shift coverage, sensor/feature selection, "smallest set that
-covers everything". Input is a membership matrix (one row per subset, a boolean column
-per element) plus a `cost` column. Adds `isSelected`.
+covers everything". Input is a tidy **membership list** — one row per `(subset, element)`
+pair the subset covers — plus a per-subset cost. Returns one row per subset with an
+`isSelected` column.
 
 ```python
-subsets = pd.DataFrame({
-    "subset": ["A", "B", "C"],
-    "e0": [1, 0, 1], "e1": [1, 1, 0], "e2": [0, 1, 1], "e3": [0, 1, 0],
-    "cost": [3, 2, 2],
+membership = pd.DataFrame({
+    "subset":  ["A", "A", "B", "B", "B", "C", "C"],
+    "element": ["e0", "e1", "e1", "e2", "e3", "e0", "e2"],
 })
-result = ortidy.set_cover(subsets, subset_id="subset")
+costs = pd.DataFrame({"subset": ["A", "B", "C"], "cost": [3, 2, 2]})
+
+result = ortidy.set_cover(membership, costs)
 result.objective                       # 4  (subsets B + C)
 result.frame[result.frame["isSelected"]]
 ```

@@ -1,9 +1,10 @@
-"""Set cover / set partition — assignment-matrix shape.
+"""Set cover / set partition — long (membership-list) form.
 
-Pick the lowest-cost collection of subsets so that every element of the universe
-is covered (set cover), or covered exactly once (set partition). Input is a
-membership matrix: one row per subset, one boolean column per element, plus a
-``cost`` column. Returns the subsets frame with an ``isSelected`` boolean column.
+Pick the lowest-cost collection of subsets so that every element is covered (set
+cover), or covered exactly once (set partition). Input is a tidy membership table —
+one row per ``(subset, element)`` pair the subset covers — plus a per-subset
+``costs`` lookup. Sparse membership is the natural form here. Returns a subset
+frame with an ``isSelected`` boolean column.
 
 Built on CP-SAT.
 
@@ -13,6 +14,7 @@ Link:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import narwhals.stable.v1 as nw
@@ -24,64 +26,64 @@ from ortidy.result import SolveResult
 
 
 def set_cover(
-    subsets: Any,
+    membership: Any,
+    costs: Mapping[Any, float] | Any,
     *,
-    cost: str = "cost",
-    subset_id: str | None = None,
-    element_columns: list[str] | None = None,
+    subset: str = "subset",
+    element: str = "element",
+    cost_column: str = "cost",
     partition: bool = False,
-    assignment_column: str = "isSelected",
+    selected_column: str = "isSelected",
     time_limit: float | None = None,
     random_seed: int = 0,
 ) -> SolveResult:
-    """Solve a set-cover (or set-partition) problem.
+    """Solve a set-cover (or set-partition) problem from a tidy membership list.
 
     Parameters:
-        subsets: Membership matrix — one row per subset, a boolean column per
-            element, and a ``cost`` column.
-        cost: Name of the per-subset cost column.
-        subset_id: Optional subset-id column (excluded from the element columns).
-        element_columns: The element (membership) columns. If ``None``, every
-            column except ``cost`` and ``subset_id`` is treated as an element.
-        partition: If ``True``, require each element covered *exactly* once
-            (set partition) rather than at least once (set cover).
-        assignment_column: Name of the added boolean column. Default ``"isSelected"``.
+        membership: One row per ``(subset, element)`` pair the subset covers.
+        costs: Per-subset cost, as a ``{subset: cost}`` mapping or a two-column
+            ``(subset, cost)`` frame.
+        subset, element: Column names within ``membership``.
+        cost_column: Name of the cost column added to the returned subset frame.
+        partition: If ``True``, require each element covered *exactly* once.
+        selected_column: Name of the added boolean column.
         time_limit: Optional wall-clock limit in seconds.
         random_seed: Solver seed for determinism.
 
     Returns:
-        SolveResult whose ``frame`` is the subsets frame (same backend) plus a
-        boolean ``assignment_column``; objective is the total selected cost.
+        SolveResult whose ``frame`` (same backend as ``membership``) is one row per
+        subset with its cost and a boolean ``selected_column``; objective is the
+        total selected cost.
     """
-    frame = _nw.to_nw(subsets)
-    schema.require_nonempty(frame, frame_name="subsets")
-    schema.require_columns(frame, {cost}, frame_name="subsets")
-    schema.require_numeric(frame, {cost}, frame_name="subsets")
+    mem = _nw.to_nw(membership)
+    schema.require_nonempty(mem, frame_name="membership")
+    schema.require_columns(mem, {subset, element}, frame_name="membership")
 
-    reserved = {cost} | ({subset_id} if subset_id else set())
-    elements = element_columns or [c for c in frame.columns if c not in reserved]
-    if not elements:
-        raise ValueError("subsets must have at least one element column.")
-    schema.require_columns(frame, set(elements), frame_name="subsets")
+    subs = _nw.column_to_list(mem, subset)
+    elems = _nw.column_to_list(mem, element)
+    cost_map = _nw.to_mapping(costs)
 
-    n = frame.shape[0]
-    costs = _nw.column_to_list(frame, cost)
-    int_costs, factor = _scaling.scale_to_int(costs)
-    membership = {e: _nw.column_to_list(frame, e) for e in elements}
+    subset_ids = _nw.unique_in_order(subs)
+    missing = set(subset_ids) - set(cost_map)
+    if missing:
+        raise KeyError(f"costs is missing subset(s) {sorted(missing)}.")
+
+    _, factor = _scaling.scale_to_int([cost_map[s] for s in subset_ids])
+    covered_by: dict[Any, list[Any]] = {}
+    for s, e in zip(subs, elems, strict=True):
+        covered_by.setdefault(e, [])
+        if s not in covered_by[e]:
+            covered_by[e].append(s)
 
     model = cp_model.CpModel()
-    x = [model.new_bool_var(f"x_{i}") for i in range(n)]
-    for element in elements:
-        covering = [x[i] for i in range(n) if membership[element][i]]
-        if not covering:
-            raise ValueError(
-                f"element {element!r} is not covered by any subset — infeasible."
-            )
+    x = {s: model.new_bool_var(f"x_{s}") for s in subset_ids}
+    for covering in covered_by.values():
+        chosen = [x[s] for s in covering]
         if partition:
-            model.add_exactly_one(covering)
+            model.add_exactly_one(chosen)
         else:
-            model.add_at_least_one(covering)
-    model.minimize(sum(x[i] * int_costs[i] for i in range(n)))
+            model.add_at_least_one(chosen)
+    model.minimize(sum(x[s] * round(cost_map[s] * factor) for s in subset_ids))
 
     solver = cp_model.CpSolver()
     solver.parameters.random_seed = random_seed
@@ -90,21 +92,33 @@ def set_cover(
     status = solver.solve(model)
     solve_status = result.from_cp_sat(status)
 
+    backend = mem.implementation
     if not solve_status.is_success:
+        empty = nw.from_dict(
+            {subset: [], cost_column: [], selected_column: []}, backend=backend
+        )
         return SolveResult(
-            frame=_nw.to_native(frame),
+            frame=_nw.to_native(empty),
             status=solve_status,
             objective=None,
             metadata={"solver": "CP-SAT"},
         )
 
-    selected = [bool(solver.value(x[i])) for i in range(n)]
-    frame = frame.with_columns(
-        nw.new_series(assignment_column, selected, backend=frame.implementation)
+    selected = [bool(solver.value(x[s])) for s in subset_ids]
+    objective = sum(
+        cost_map[s] for s, keep in zip(subset_ids, selected, strict=True) if keep
+    )
+    out = nw.from_dict(
+        {
+            subset: subset_ids,
+            cost_column: [cost_map[s] for s in subset_ids],
+            selected_column: selected,
+        },
+        backend=backend,
     )
     return SolveResult(
-        frame=_nw.to_native(frame),
+        frame=_nw.to_native(out),
         status=solve_status,
-        objective=_scaling.unscale(solver.objective_value, factor),
+        objective=objective,
         metadata={"solver": "CP-SAT", "wall_time": solver.wall_time},
     )

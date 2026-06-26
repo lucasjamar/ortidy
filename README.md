@@ -54,7 +54,7 @@ Three result *shapes* cover every solver:
 
 | Shape | Solvers | Result |
 | --- | --- | --- |
-| **assignment-matrix** | `knapsack`, `multi_knapsack`, `bin_packing` | rows mapped to bins/resources |
+| **selection** | `knapsack`, `multi_knapsack`, `bin_packing` | rows mapped to bins/resources |
 | **edge-flow** | `solve_routing` (more in progress) | values on an edge list |
 | **interval-schedule** | scheduling (roadmap) | intervals on a timeline |
 
@@ -72,13 +72,13 @@ bool(result)       # True when OPTIMAL or FEASIBLE — a FEASIBLE solution is a 
 
 | Shape | Function | Problem |
 | --- | --- | --- |
-| assignment-matrix | `knapsack` | 0/1 & multidimensional knapsack |
-| assignment-matrix | `multi_knapsack` | multiple knapsack |
-| assignment-matrix | `bin_packing` | bin packing (minimize bins) |
-| assignment-matrix | `assignment` | linear assignment |
-| assignment-matrix | `generalized_assignment` | GAP (capacity-limited agents) |
-| assignment-matrix | `facility_location` | uncapacitated facility location |
-| assignment-matrix | `set_cover` | set cover / partition |
+| selection | `knapsack` | 0/1 & multidimensional knapsack |
+| selection | `multi_knapsack` | multiple knapsack |
+| selection | `bin_packing` | bin packing (minimize bins) |
+| selection | `assignment` | linear assignment |
+| selection | `generalized_assignment` | GAP (capacity-limited agents) |
+| selection | `facility_location` | uncapacitated facility location |
+| selection | `set_cover` | set cover / partition |
 | edge-flow | `max_flow` / `min_cost_flow` / `shortest_path` | network flow |
 | edge-flow | `transportation` | transportation problem |
 | edge-flow | `solve_routing` (+ `distance_matrix`) | vehicle routing (TSP/VRP/CVRP/VRPTW/pickups) |

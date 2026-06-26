@@ -4,31 +4,31 @@ Every `ortidy` solver produces one of exactly **three** result shapes. Designing
 around these keeps the library a coherent whole rather than a bag of functions —
 once you know a solver's shape, you know what its output looks like.
 
-## assignment-matrix
+## selection
 
-Rows mapped to columns / bins / resources. The solver returns your frame with an
-assignment column added.
+The input table gains a selection / assignment column marking what was chosen — an
+item, a bin, or an edge in a tidy edge list.
 
-| Solver | Assignment column |
+| Solver | Selection column |
 | --- | --- |
 | `knapsack` | `isIncluded` (boolean) |
 | `multi_knapsack` | `binId` (assigned bin, or null) |
 | `bin_packing` | `binId` |
-| `assignment` | `assignedTo` (+ `cost`) |
-| `generalized_assignment` | `assignedTo` |
-| `facility_location` | `assignedTo` |
-| `set_cover` | `isSelected` (boolean) |
+| `assignment` | `selected` (boolean, on `(agent, task)` edges) |
+| `generalized_assignment` | `selected` (on `(task, agent)` edges) |
+| `facility_location` | `selected` (on `(customer, facility)` edges) |
+| `set_cover` | `isSelected` (boolean, per subset) |
 
 ## edge-flow
 
-Values on an edge list. The solver returns an edge frame with a flow column.
+A numeric flow on an edge list. The solver returns the edges with a flow column.
 
 | Solver | Output |
 | --- | --- |
 | `max_flow` | edges + `flow` |
 | `min_cost_flow` | edges + `flow` |
 | `shortest_path` | edges + `onPath` |
-| `transportation` | edge list `(source, sink, cost, quantity)` |
+| `transportation` | `(source, sink, cost)` edges + `quantity` |
 | `solve_routing` | edge list of trips with route features |
 
 ## interval-schedule

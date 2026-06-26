@@ -1,4 +1,4 @@
-"""Set cover / partition tests."""
+"""Set cover / partition tests (long membership-list form)."""
 
 from __future__ import annotations
 
@@ -10,16 +10,12 @@ from ortidy.result import SolveStatus
 from tests.conftest import as_pandas, native_type_name
 
 
-def _subsets(backend: str):
-    # 3 subsets over elements e0..e3; optimal cover is B+C (cost 4).
+def _membership(backend: str):
+    # A covers e0,e1; B covers e1,e2,e3; C covers e0,e2. Optimal cover B+C (cost 4).
     df = pd.DataFrame(
         {
-            "subset": ["A", "B", "C"],
-            "e0": [1, 0, 1],
-            "e1": [1, 1, 0],
-            "e2": [0, 1, 1],
-            "e3": [0, 1, 0],
-            "cost": [3, 2, 2],
+            "subset": ["A", "A", "B", "B", "B", "C", "C"],
+            "element": ["e0", "e1", "e1", "e2", "e3", "e0", "e2"],
         }
     )
     if backend == "polars":
@@ -29,48 +25,57 @@ def _subsets(backend: str):
     return df
 
 
+def _costs(backend: str):
+    df = pd.DataFrame({"subset": ["A", "B", "C"], "cost": [3, 2, 2]})
+    if backend == "polars":
+        import polars as pl
+
+        return pl.from_pandas(df)
+    return df
+
+
 def test_covers_all_elements_at_min_cost(backend):
-    result = ortidy.set_cover(_subsets(backend), subset_id="subset")
+    result = ortidy.set_cover(_membership(backend), _costs(backend))
     assert result.status is SolveStatus.OPTIMAL
     assert result.objective == 4
 
     out = as_pandas(result.frame)
-    chosen = out[out["isSelected"]]
-    assert set(chosen["subset"]) == {"B", "C"}
-    # Every element is covered by at least one chosen subset.
-    for element in ["e0", "e1", "e2", "e3"]:
-        assert chosen[element].sum() >= 1
+    chosen = set(out[out["isSelected"]]["subset"])
+    assert chosen == {"B", "C"}
+    # Sanity: the chosen subsets cover every element.
+    mem = as_pandas(_membership(backend))
+    covered = set(mem[mem["subset"].isin(chosen)]["element"])
+    assert covered == set(mem["element"])
+
+
+def test_costs_as_mapping():
+    result = ortidy.set_cover(_membership("pandas"), {"A": 3, "B": 2, "C": 2})
+    assert result.objective == 4
 
 
 def test_partition_requires_exact_cover():
-    # Overlapping subsets: a partition must avoid double-covering e1/e2.
-    subsets = pd.DataFrame(
+    membership = pd.DataFrame(
         {
-            "subset": ["A", "B", "C"],
-            "e0": [1, 0, 0],
-            "e1": [1, 1, 0],
-            "e2": [0, 1, 1],
-            "e3": [0, 0, 1],
-            "cost": [1, 1, 1],
+            "subset": ["A", "B", "B", "C"],
+            "element": ["e0", "e1", "e2", "e2"],
         }
     )
-    result = ortidy.set_cover(subsets, subset_id="subset", partition=True)
+    costs = {"A": 1, "B": 1, "C": 1}
+    result = ortidy.set_cover(membership, costs, partition=True)
     assert result.status is SolveStatus.OPTIMAL
-    out = as_pandas(result.frame)
-    chosen = out[out["isSelected"]]
-    for element in ["e0", "e1", "e2", "e3"]:
-        assert chosen[element].sum() == 1
+    chosen = set(as_pandas(result.frame).query("isSelected")["subset"])
+    assert chosen == {"A", "B"}  # C would double-cover e2
 
 
-def test_uncoverable_element_raises():
-    subsets = pd.DataFrame({"subset": ["A"], "e0": [1], "e1": [0], "cost": [1]})
-    with pytest.raises(ValueError, match="not covered by any subset"):
-        ortidy.set_cover(subsets, subset_id="subset")
+def test_missing_cost_raises():
+    membership = pd.DataFrame({"subset": ["A"], "element": ["e0"]})
+    with pytest.raises(KeyError, match="A"):
+        ortidy.set_cover(membership, {"B": 1})
 
 
 def test_backend_parity():
-    pdf = ortidy.set_cover(_subsets("pandas"), subset_id="subset")
-    pol = ortidy.set_cover(_subsets("polars"), subset_id="subset")
+    pdf = ortidy.set_cover(_membership("pandas"), _costs("pandas"))
+    pol = ortidy.set_cover(_membership("polars"), _costs("polars"))
     assert native_type_name(pdf.frame) == "pandas"
     assert native_type_name(pol.frame) == "polars"
     assert pdf.objective == pol.objective
