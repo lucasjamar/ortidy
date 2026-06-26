@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-26 - Fill the remaining OR-Tools coverage gaps
+
+### Added
+* **`blend`** — diet / blending linear program (Glop): continuous item quantities
+  minimizing cost subject to per-attribute min/max requirements.
+* **Routing optional visits** — `solve_routing(penalties=…)` makes stops droppable
+  at a penalty (prize-collecting); dropped nodes are in `metadata["dropped"]`.
+* **Routing fleet sizing** — `solve_routing(vehicle_fixed_cost=…)` minimizes the
+  number of vehicles used.
+* **Assignment with teams** — `assignment(teams=…, team_capacity=…)` caps how many
+  agents each team may use.
+* **Assignment with allowed groups** — `assignment(allowed_groups=…)` restricts the
+  active-agent set of each group to an allowed pattern.
+
+### Changed
+* Stronger input validation: required numeric columns reject nulls; weights, sizes,
+  capacities, and supply/demand must be non-negative; id and lookup-key columns must
+  be unique.
+* Dropped the unused `pandera` runtime dependency — validation is hand-rolled in the
+  Narwhals layer, so runtime deps are just `narwhals` + `ortools`.
+
 ## [0.4.0] - 2026-06-26 - Long-form (tidy) inputs
 
 ### Changed (breaking)

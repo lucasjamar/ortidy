@@ -25,7 +25,7 @@ from ortidy.scheduling.job_shop import job_shop
 from ortidy.scheduling.shift_scheduling import shift_scheduling
 from ortidy.transportation.transportation import transportation
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 __all__ = [
     "knapsack",

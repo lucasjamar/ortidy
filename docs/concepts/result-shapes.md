@@ -18,6 +18,7 @@ item, a bin, or an edge in a tidy edge list.
 | `generalized_assignment` | `selected` (on `(task, agent)` edges) |
 | `facility_location` | `selected` (on `(customer, facility)` edges) |
 | `set_cover` | `isSelected` (boolean, per subset) |
+| `blend` | `quantity` (continuous, per item) |
 
 ## edge-flow
 
