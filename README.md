@@ -4,6 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/ortidy.svg)](https://pypi.org/project/ortidy/)
 [![Python](https://img.shields.io/badge/python-3.10%20%E2%80%93%203.13-blue.svg)](https://pypi.org/project/ortidy/)
 [![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://lucasjamar.github.io/ortidy/)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lucasjamar/ortidy/main?labpath=examples)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/lucasjamar/ortidy/blob/main/LICENSE.md)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://github.com/astral-sh/ruff)
 
@@ -83,6 +84,13 @@ from ortidy import data
 items = data.items_knapsack()            # pandas by default
 items = data.items_knapsack("polars")    # or Polars
 ```
+
+## Examples
+
+Runnable notebooks live in [`examples/`](examples) — knapsack/bin-packing, a
+haversine world-tour TSP, and capacitated vehicle routing, each plotted with
+Plotly. Try them in your browser with no install:
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/lucasjamar/ortidy/main?labpath=examples)
 
 ## Migrating from `pandas-or`
 

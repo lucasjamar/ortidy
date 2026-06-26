@@ -37,6 +37,11 @@ docs = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=1.0.4",
 ]
+examples = [
+    "plotly>=5.0",
+    "jupyterlab>=4.0",
+    "nbconvert>=7.0",
+]
 
 [build-system]
 requires = ["hatchling"]
