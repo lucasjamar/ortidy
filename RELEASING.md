@@ -39,18 +39,12 @@ uv publish --token pypi-XXXX  # or set UV_PUBLISH_TOKEN
 uv publish --publish-url https://test.pypi.org/legacy/ --token pypi-XXXX
 ```
 
-## Publish the `pandas-or` deprecation shim
+## The old `pandas-or` PyPI project
 
-Publish the shim **after** `ortidy` (it depends on it):
-
-```bash
-cd packaging/pandas-or-shim
-uv build
-uv publish --token pypi-XXXX
-```
-
-Do **not** delete the old `pandas-or` PyPI project — leaving the shim as a
-tombstone prevents the name being taken by typosquatters.
+There is no migration shim. The existing `pandas-or` 0.1.3 project stays on PyPI
+as-is (don't delete it — that would free the name for typosquatters). Its project
+page links to this GitHub repo, which redirects to `ortidy`. New users install
+`ortidy` directly.
 
 ## Version bump checklist
 

@@ -9,9 +9,7 @@ requires-python = ">=3.10"
 keywords = ["operations-research", "optimization", "ortools", "dataframe", "narwhals"]
 dependencies = [
     "narwhals>=1.0",
-    # 9.15.x ships a CP-SAT wheel that segfaults on solve() (Windows/py3.12);
-    # 9.12–9.14 are verified-good. Revisit when a fixed 9.15+ is released.
-    "ortools>=9.11,<9.15",
+    "ortools>=9.12",
     "pandera>=0.20",
 ]
 

@@ -14,11 +14,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * **Routing promises**: VRPTW (time windows) and pickups & deliveries in
   `solve_routing`, plus a `distance_matrix` helper (euclidean / haversine) so
   routing can take locations instead of a precomputed matrix.
-* mkdocs-material documentation and a `pandas-or` deprecation shim package.
+* mkdocs-material documentation.
 
 ### Changed
 * **Renamed `pandas-or` → `ortidy`** ("OR on tidy dataframes"). The importable
-  module is now `ortidy`; `pandas-or` continues to resolve via a deprecation shim.
+  module is now `ortidy`; the old `pandas-or` 0.1.3 on PyPI is left unmaintained.
 * **Backend-agnostic** via Narwhals: pandas in → pandas out, Polars in → Polars
   out. pandas remains the reference backend.
 * Every solver returns a structured **`SolveResult`** (frame, status, objective,
@@ -40,8 +40,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Python floor raised to 3.10; **uv** for dependency management (PEP 735
   `[dependency-groups]`) with **hatchling** as the build backend; `ruff`, `mypy`,
   `pre-commit`, and GitHub Actions CI (test matrix + strict docs build).
-* Pinned `ortools <9.15` — its CP-SAT wheel segfaults on `solve()` (Windows /
-  py3.12); 9.12–9.14 are verified-good.
+* Depend on `ortools>=9.12` (current 9.15), supporting Python 3.10–3.14.
 * Stripped ~8 MB of embedded notebook output.
 
 ## [0.1.3] - 2022-08-07

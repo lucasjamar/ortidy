@@ -83,9 +83,8 @@ items = data.items_knapsack("polars")    # or Polars
 
 ## Migrating from `pandas-or`
 
-`ortidy` is `pandas-or` renamed and rebuilt. `pip install pandas-or` will
-continue to resolve to `ortidy` via a deprecation shim, but new code should
-depend on `ortidy` and `import ortidy`. The key changes:
+`ortidy` is `pandas-or` renamed and rebuilt. Install `ortidy` and `import ortidy`
+(the old `pandas-or` 0.1.3 on PyPI is unmaintained). The key changes:
 
 - Solvers return a **`SolveResult`** object, not a bare frame / `None`.
 - Rows are identified by **explicit id columns**, never a positional index.

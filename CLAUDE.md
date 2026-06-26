@@ -22,7 +22,7 @@ Guidance for Claude Code working in this repository. Read this fully before maki
 
 2. **No implicit pandas index.** Narwhals follows the Polars index-free model. Identify rows with explicit ID columns (`itemId`, `binId`, `vehicleId`, `locationId`, …), never with a positional index. This is also required by the return contract below.
 
-3. **Name: `ortidy`** (renamed from `pandas-or`). The importable module is `ortidy` (`import ortidy`). The old name lives on only as a PyPI deprecation shim — see *Renaming & migration*. Update all references, badges, and the module folder accordingly.
+3. **Name: `ortidy`** (renamed from `pandas-or`). The importable module is `ortidy` (`import ortidy`). The old `pandas-or` 0.1.3 stays on PyPI unmaintained (not deleted). Update all references, badges, and the module folder accordingly.
 
 4. **Modern solver choice:** prefer **CP-SAT** (`from ortools.sat.python import cp_model`) for packing/assignment/scheduling models over the legacy `pywraplp`/SCIP path. CP-SAT is Google's recommended modern solver and removes the variable-construction mess in the old code. Keep the dedicated routing library (`ortools.constraint_solver.pywrapcp`) for routing, and the dedicated graph solvers for flow.
 
@@ -34,10 +34,7 @@ The two platforms behave differently — handle each correctly.
 
 - **GitHub: rename the existing repo in place. Do NOT start a fresh repo.** Renaming preserves history, stars, issues, and watchers, and GitHub auto-redirects the old URL (web, clones, fetches, API) to the new name. Redirects break only if a new repo is later created at the old path — so don't reuse it.
   - Before the rewrite lands, preserve the old version: tag it (`v0.1.3-legacy`) and/or cut a `legacy/0.1.x` branch. Do the rewrite on `main`.
-- **PyPI: there is no rename feature — register `ortidy` as a new project.** Then handle the old name as a redirect shim:
-  1. Publish the new code under `ortidy` first.
-  2. Release one final `pandas-or` version (bump above `0.1.3`) whose **only dependency is `ortidy`**, with a README explaining the rename, so `pip install pandas-or` resolves to the new code. (Simon Willison's `pypi-rename` cookiecutter automates this.)
-  3. **Do not delete** the old PyPI project — that frees the name for typosquatters. Leave the shim as a tombstone.
+- **PyPI: there is no rename feature — register `ortidy` as a new project.** Publish the new code under `ortidy`. **Decision:** *no* `pandas-or` deprecation/redirect shim is shipped — `pandas-or` had effectively no adoption, so a redirect shim isn't worth the maintenance. **Do not delete** the old `pandas-or` 0.1.3 project (deleting frees the name for typosquatters); leave it as-is. Its project page links to this GitHub repo, which redirects to `ortidy`.
 - **Availability:** `ortidy` is confirmed free on PyPI and as an import name. If the name is ever changed again, re-check PyPI, the importable module name, GitHub, and Read the Docs *before* committing.
 - **Surfaces to update during the rename:** `pyproject.toml` (name, urls), the module folder `pandas_or/` → `ortidy/`, `CITATION.cff`, README + badges, Read the Docs project, Binder links, and any `import pandas_or` in examples/notebooks.
 
@@ -88,14 +85,14 @@ When there is no solution, report *why* where the solver allows it (e.g. CP-SAT 
 ## Roadmap (phased — work in this order)
 
 ### P0 — Unbreak, rename, modernize (do first, no new features)
-- **Execute the rename** per *Renaming & migration*: rename the GitHub repo, tag/branch the legacy version, rename the module folder `pandas_or/` → `ortidy/`, update `pyproject.toml`/`CITATION.cff`/README/badges, register `ortidy` on PyPI, and prepare the `pandas-or` deprecation shim.
+- **Execute the rename** per *Renaming & migration*: rename the GitHub repo, tag/branch the legacy version, rename the module folder `pandas_or/` → `ortidy/`, update `pyproject.toml`/`CITATION.cff`/README/badges, and register `ortidy` on PyPI (no `pandas-or` shim).
 - **Fix the dead knapsack import.** Current OR-Tools moved the knapsack solver to `from ortools.algorithms.python import knapsack_solver` with snake_case methods. Verify exact method casing (`init` / `solve` / `best_solution_contains`) against the *installed* ortools version before committing.
 - **Fix the broken test.** `tests/` asserts `__version__ == '0.1.0'` while the package was `0.1.3` — it has always failed. Replace with a real suite (see Testing).
 - **Fix known bugs:**
   - `knapsack` return type lies: docstring/annotation says `pd.Series` but `items.index.map(...)` returns an `Index`. Align with the new return contract.
   - `single_vehicle_route` appends a phantom final row after the loop using an out-of-range index — drop it.
   - `solve_routing` has a dead `if "capacity" in column_names` branch that checks a distance matrix's columns for a capacity field that cannot be there — remove.
-- **Modernize packaging/tooling:** Python floor to 3.10+; PEP 621 `[project]` metadata with **uv** as the package/dependency manager (PEP 735 `[dependency-groups]`) and **hatchling** as the build backend; unpin to current `ortools` (pinned `<9.15` — its CP-SAT wheel segfaults on Windows/py3.12), add `narwhals`; add `ruff` (lint+format, replacing black-only), `mypy`, `pre-commit`; add GitHub Actions CI; add `nbstripout` and strip the embedded notebook output bloating the repo.
+- **Modernize packaging/tooling:** Python floor to 3.10+; PEP 621 `[project]` metadata with **uv** as the package/dependency manager (PEP 735 `[dependency-groups]`) and **hatchling** as the build backend; unpin to current `ortools` (`>=9.12`), add `narwhals`; add `ruff` (lint+format, replacing black-only), `mypy`, `pre-commit`; add GitHub Actions CI; add `nbstripout` and strip the embedded notebook output bloating the repo.
 - **Migrate the working solvers to Narwhals + the return contract** without changing their math: `knapsack`, `multi_knapsack`, `bin_packing`, `solve_routing`. While here, kill the `items.apply(lambda x: solver.BoolVar(...), axis=1)` cross-product variable-construction anti-pattern (rebuild on CP-SAT).
 
 ### P1 — API consistency + new shapes (cheap, high-value)

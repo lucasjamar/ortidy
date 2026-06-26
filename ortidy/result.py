@@ -32,8 +32,12 @@ class SolveStatus(str, Enum):
         return self in (SolveStatus.OPTIMAL, SolveStatus.FEASIBLE)
 
 
-def from_cp_sat(status: int) -> SolveStatus:
-    """Map a CP-SAT ``cp_model`` status code to :class:`SolveStatus`."""
+def from_cp_sat(status: Any) -> SolveStatus:
+    """Map a CP-SAT solve status to :class:`SolveStatus`.
+
+    Accepts ``Any`` because the status type is an ``int`` in older OR-Tools and a
+    ``CpSolverStatus`` enum in newer ones — this is a thin cross-version adapter.
+    """
     from ortools.sat.python import cp_model
 
     return {

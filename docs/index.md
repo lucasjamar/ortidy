@@ -45,6 +45,5 @@ See [Solvers](solvers.md) for the full catalogue and the [API reference](api.md)
 for signatures.
 
 !!! note "Migrating from `pandas-or`"
-    `ortidy` is `pandas-or` renamed and rebuilt. `pip install pandas-or` still
-    resolves to `ortidy` via a deprecation shim, but new code should depend on
-    `ortidy` and `import ortidy`.
+    `ortidy` is `pandas-or` renamed and rebuilt. Install `ortidy` and
+    `import ortidy`; the old `pandas-or` 0.1.3 on PyPI is unmaintained.
