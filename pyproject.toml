@@ -51,6 +51,8 @@ default-groups = ["dev"]
 [tool.ruff]
 target-version = "py310"
 line-length = 88
+# Example notebooks are illustrative and not held to the library's lint rules.
+extend-exclude = ["examples"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
