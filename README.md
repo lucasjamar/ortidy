@@ -41,12 +41,8 @@ print(result.objective)     # 220
 print(result.frame)         # items + an `isIncluded` boolean column
 ```
 
-The headline UX is the **`.or_` accessor**, registered on the frame you hold:
-
-```python
-items.or_.knapsack(capacity=50)          # pandas
-pl_items.or_.knapsack(capacity=50)       # Polars — same call, Polars result
-```
+Every solver is a plain function — pass a native frame (pandas, Polars, …) and
+get a `SolveResult` back in the same backend.
 
 ## Result contract
 

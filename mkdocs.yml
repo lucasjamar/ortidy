@@ -24,7 +24,6 @@ nav:
   - Home: index.md
   - Concepts:
       - Result shapes: result-shapes.md
-      - The .or_ accessor: accessor.md
   - Solvers: solvers.md
   - API reference: api.md
 

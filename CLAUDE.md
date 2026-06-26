@@ -58,8 +58,18 @@ Do **not** invent a fourth shape without flagging it for discussion first.
 ### Result object, not print-and-None
 The old code does `print("no optimal solution")` and implicitly returns `None`. Replace everywhere with a structured result carrying: the result frame, a status enum (`OPTIMAL` / `FEASIBLE` / `INFEASIBLE` / `UNBOUNDED` / `MODEL_INVALID`), objective value, and solve metadata (wall time, gap). **A `FEASIBLE` solution is a success, not a failure** — the old code wrongly discards anything that isn't `OPTIMAL`.
 
-### Accessor pattern (the "dataframe-native" promise)
-Expose a dataframe accessor so usage reads idiomatically, e.g. `df.or_.knapsack(capacity=100)` and `locations.or_.route(vehicles=...)`. Keep standalone functions too, but the accessor is the headline UX. (Register on the native frame the user holds.)
+### Functional API (the canonical interface)
+Solvers are plain functions: pass a native frame, get a `SolveResult` back in the
+same backend, e.g. `ortidy.knapsack(df, capacity=100)` and
+`ortidy.solve_routing(distances, vehicles=...)`. This is the canonical, fully
+backend-agnostic surface — it works for *any* Narwhals backend.
+
+> **Decision:** the `.or_` dataframe accessor was **removed**. It only worked on
+> backends we explicitly registered (pandas, Polars) — undercutting the
+> backend-agnostic promise — and mutated the global pandas/Polars namespace at
+> import time. The functional API is the single, portable interface. If a
+> chainable surface is wanted later, prefer an explicit, side-effect-free wrapper
+> (`ortidy.wrap(df).knapsack(...)`) over a monkeypatch accessor.
 
 ### Schema validation
 Standardize input validation. The old ad-hoc `if not {"value","weight"}.issubset(...)` pattern is a good instinct — formalize it with [Pandera](https://pandera.readthedocs.io/) (which supports Narwhals/Polars) or explicit schema checks. Raise precise, actionable errors (which column is missing, what dtype was expected). Prefer `ValueError`/`KeyError` over the `AttributeError` the old code raises.
@@ -93,12 +103,12 @@ When there is no solution, report *why* where the solver allows it (e.g. CP-SAT 
 - **Network flow** (edge-flow shape). Max-flow, min-cost-flow, shortest path via the dedicated `ortools.graph.python` solvers. Naturally an edge-list frame.
 - **Finish the routing promises** already advertised in the old README: **time windows (VRPTW)** and **pickups & deliveries**. Also expose multiple depots and heterogeneous fleets.
 - **Separate distance-matrix construction from routing.** The old API secretly requires `df` to be a precomputed distance matrix. Add a helper that builds the matrix from lat/long (haversine) or x/y (euclidean) so the routing API takes *locations* — what users actually have.
-- Ship the **`.or_` accessor** and the **result object** across all P0/P1 solvers.
+- Ship the **result object** across all P0/P1 solvers. (The `.or_` accessor was removed — see *Functional API* above.)
 
 ### P2 — Flagship + polish
-- **Scheduling / rostering** (interval-schedule shape) on CP-SAT: shift scheduling (the long-promised feature), job-shop/flow-shop, RCPSP. Build this only after the result-object and accessor designs have proven themselves on P1.
+- **Scheduling / rostering** (interval-schedule shape) on CP-SAT: shift scheduling (the long-promised feature), job-shop/flow-shop, RCPSP. Build this only after the result-object design has proven itself on P1.
 - **Facility location & covering:** facility location, p-median, set cover/partition.
-- **Docs:** stand up `mkdocs-material` (the README has promised "Read The Docs coming soon" for four years). Document the three result shapes and the accessor as the conceptual spine.
+- **Docs:** stand up `mkdocs-material` (the README has promised "Read The Docs coming soon" for four years). Document the three result shapes as the conceptual spine.
 - Optional routing extras: optional visits / prize-collecting, backhauls.
 
 ---

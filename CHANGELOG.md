@@ -24,7 +24,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Every solver returns a structured **`SolveResult`** (frame, status, objective,
   metadata) instead of a bare frame / `None`. A `FEASIBLE` solution is a success.
 * Rows are identified by **explicit id columns**, never a positional index.
-* Added the **`.or_` accessor** (`df.or_.knapsack(...)`) on pandas and Polars.
 
 ### Fixed
 * `knapsack`: migrated to the modern `ortools.algorithms.python.knapsack_solver`

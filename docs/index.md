@@ -28,11 +28,8 @@ result.objective    # 220
 result.frame        # items + an `isIncluded` column
 ```
 
-Or via the [`.or_` accessor](accessor.md):
-
-```python
-items.or_.knapsack(capacity=50)
-```
+Every solver is a plain function: pass a native frame, get a `SolveResult` back
+in the same backend.
 
 ## The conceptual spine
 

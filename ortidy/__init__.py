@@ -8,7 +8,7 @@ the objective, and solve metadata.
 
 from __future__ import annotations
 
-from ortidy import accessor, data
+from ortidy import data
 from ortidy.assignment.assignment import assignment
 from ortidy.binning.bin_packing import bin_packing
 from ortidy.binning.knapsack import knapsack
@@ -21,9 +21,6 @@ from ortidy.routing.routing import solve_routing
 from ortidy.scheduling.shift_scheduling import shift_scheduling
 
 __version__ = "0.2.0"
-
-# Register the ``.or_`` accessor on every importable backend.
-accessor.register()
 
 __all__ = [
     "knapsack",
