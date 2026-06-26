@@ -1,6 +1,6 @@
 [project]
 name = "ortidy"
-version = "0.2.0"
+version = "0.3.0"
 description = "Operations research on tidy dataframes — a backend-agnostic dataframe façade over Google OR-Tools."
 authors = [{ name = "Lucas Jamar" }]
 license = "Apache-2.0"
