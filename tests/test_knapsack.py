@@ -57,6 +57,30 @@ def test_float_values_are_scaled():
     assert res.objective == pytest.approx(1.2)
 
 
+def test_multidimensional_knapsack():
+    # Two constraints: weight <= 50 AND volume <= 6.
+    items = pd.DataFrame(
+        {
+            "value": [60, 100, 120, 40],
+            "weight": [10, 20, 30, 15],
+            "volume": [2, 3, 4, 1],
+        }
+    )
+    res = ortidy.knapsack(items, capacity=[50, 6], weight=["weight", "volume"])
+    assert res.status is SolveStatus.OPTIMAL
+    out = as_pandas(res.frame)
+    chosen = out[out["isIncluded"]]
+    assert chosen["weight"].sum() <= 50
+    assert chosen["volume"].sum() <= 6
+    assert chosen["value"].sum() == res.objective == 200
+
+
+def test_mismatched_weight_capacity_raises():
+    items = pd.DataFrame({"value": [1], "weight": [1], "volume": [1]})
+    with pytest.raises(ValueError, match="must match"):
+        ortidy.knapsack(items, capacity=[10], weight=["weight", "volume"])
+
+
 def test_missing_column_raises_keyerror():
     items = pd.DataFrame({"value": [1, 2]})  # no weight column
     with pytest.raises(KeyError, match="weight"):

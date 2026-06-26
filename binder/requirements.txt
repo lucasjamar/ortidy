@@ -1,6 +1,4 @@
 # Binder environment for the example notebooks.
-# Installs ortidy from this repo so the badge works before the PyPI release;
-# switch to `ortidy` once published.
-git+https://github.com/lucasjamar/ortidy.git
+ortidy
 pandas
 plotly

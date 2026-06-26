@@ -70,12 +70,22 @@ bool(result)       # True when OPTIMAL or FEASIBLE — a FEASIBLE solution is a 
 
 ## Solvers
 
-| Function | Problem |
-| --- | --- |
-| `ortidy.knapsack(items, capacity)` | 0/1 knapsack |
-| `ortidy.multi_knapsack(items, bins)` | multiple knapsack |
-| `ortidy.bin_packing(items, capacity)` | bin packing (minimize bins) |
-| `ortidy.solve_routing(matrix, vehicles=...)` | vehicle routing |
+| Shape | Function | Problem |
+| --- | --- | --- |
+| assignment-matrix | `knapsack` | 0/1 & multidimensional knapsack |
+| assignment-matrix | `multi_knapsack` | multiple knapsack |
+| assignment-matrix | `bin_packing` | bin packing (minimize bins) |
+| assignment-matrix | `assignment` | linear assignment |
+| assignment-matrix | `generalized_assignment` | GAP (capacity-limited agents) |
+| assignment-matrix | `facility_location` | uncapacitated facility location |
+| assignment-matrix | `set_cover` | set cover / partition |
+| edge-flow | `max_flow` / `min_cost_flow` / `shortest_path` | network flow |
+| edge-flow | `transportation` | transportation problem |
+| edge-flow | `solve_routing` (+ `distance_matrix`) | vehicle routing (TSP/VRP/CVRP/VRPTW/pickups) |
+| interval-schedule | `shift_scheduling` | employee rostering |
+| interval-schedule | `job_shop` | job-shop scheduling |
+
+See the [docs](https://lucasjamar.github.io/ortidy/) for a worked example of each.
 
 Sample datasets ship with the package:
 

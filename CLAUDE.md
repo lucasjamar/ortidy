@@ -105,7 +105,7 @@ When there is no solution, report *why* where the solver allows it (e.g. CP-SAT 
 ### P2 — Flagship + polish
 - **Scheduling / rostering** (interval-schedule shape) on CP-SAT: shift scheduling (the long-promised feature), job-shop/flow-shop, RCPSP. Build this only after the result-object design has proven itself on P1.
 - **Facility location & covering:** facility location, p-median, set cover/partition.
-- **Docs:** stand up `mkdocs-material` (the README has promised "Read The Docs coming soon" for four years). Document the three result shapes as the conceptual spine.
+- **Docs:** Sphinx + **furo** + MyST + autodoc (the polymarket-pandas convention), deployed to GitHub Pages via the artifact flow. Document the three result shapes as the conceptual spine, with a worked example per solver.
 - Optional routing extras: optional visits / prize-collecting, backhauls.
 
 ---
