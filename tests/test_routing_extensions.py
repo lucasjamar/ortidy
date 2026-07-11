@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import ortidy
 from ortidy import data
@@ -47,6 +48,55 @@ def test_vehicle_fixed_cost_reduces_fleet():
     out = as_pandas(result.frame)
     used = (out.groupby("vehicleId")["distance"].sum() > 0).sum()
     assert used == 1  # fixed cost makes the solver use a single vehicle
+    assert result.metadata["vehicles_used"] == 1
+
+
+def test_node_names_in_time_windows():
+    # Name the matrix columns non-positionally and reference nodes by name.
+    matrix = _line_matrix().rename(columns={str(i): f"s{i}" for i in range(5)})
+    windows = pd.DataFrame(
+        {
+            "node": ["s0", "s1", "s2", "s3", "s4"],
+            "open": [0] * 5,
+            "close": [10_000] * 5,
+        }
+    )
+    result = ortidy.solve_routing(
+        matrix, vehicles=1, starting_point="s0", time_windows=windows
+    )
+    assert result.status.is_success
+
+
+def test_unknown_node_name_raises():
+    matrix = _line_matrix().rename(columns={str(i): f"s{i}" for i in range(5)})
+    windows = pd.DataFrame({"node": ["nope"], "open": [0], "close": [1]})
+    with pytest.raises(KeyError, match="nope"):
+        ortidy.solve_routing(
+            matrix, vehicles=1, starting_point="s0", time_windows=windows
+        )
+
+
+def test_isreturn_marks_terminal_leg(backend):
+    matrix = _euclidean_matrix()
+    if backend == "polars":
+        import polars as pl
+
+        matrix = pl.from_pandas(matrix)
+    result = ortidy.solve_routing(matrix, vehicles=3)
+    out = as_pandas(result.frame)
+    assert "isReturn" in out.columns
+    # Exactly one terminal (return) row per vehicle, with a null destination.
+    assert out.groupby("vehicleId")["isReturn"].sum().eq(1).all()
+    assert out[out["isReturn"]]["destination"].isna().all()
+
+
+def test_span_cost_override_still_works():
+    # Explicitly passing a span coefficient with fleet sizing is honored (no crash).
+    matrix = _line_matrix()
+    result = ortidy.solve_routing(
+        matrix, vehicles=3, vehicle_fixed_cost=10_000, span_cost_coefficient=50
+    )
+    assert result.status.is_success
 
 
 def test_pickups_and_deliveries_same_vehicle_and_order():
