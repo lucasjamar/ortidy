@@ -86,6 +86,8 @@ def _add_features(frame: nw.DataFrame) -> nw.DataFrame:
             nw.col("distanceSinceStart").max().over("vehicleId")
             - nw.col("distanceSinceStart")
         ),
+        # The terminal row (arrival back at the depot) has no onward destination.
+        isReturn=nw.col("destination").is_null(),
     )
     return frame.drop("_ones")
 
@@ -108,7 +110,7 @@ def solve_routing(
     locations: Any = None,
     starting_point: str | int = 0,
     max_distance: int = 3000,
-    span_cost_coefficient: int = 100,
+    span_cost_coefficient: int | None = None,
     time_limit: float = 1.0,
     vehicle_id_column: str = "vehicleId",
     capacity_column: str = "capacity",
@@ -135,17 +137,20 @@ def solve_routing(
         starting_point: Depot node — a column name or positional node index.
         max_distance: Per-vehicle max travel distance (distance dimension).
         span_cost_coefficient: Global span cost coefficient (load balancing).
+            Defaults to ``100`` normally, but to ``0`` when ``vehicle_fixed_cost`` is
+            set (so span cost doesn't distort fleet-sizing); pass a value to override.
         time_limit: Solver wall-clock limit in seconds.
         vehicle_id_column: Vehicle-id column in the ``vehicles`` frame.
         capacity_column: Vehicle-capacity column in the ``vehicles`` frame.
         demand_column: Demand column in the ``locations`` frame.
         pickups_deliveries: Optional frame of ``(pickup, delivery)`` node pairs;
             each pair is served by one vehicle, pickup before delivery (VRP-PD).
+            Nodes may be given as matrix column **names** or positional **integers**.
         pickup_column: Pickup-node column within ``pickups_deliveries``.
         delivery_column: Delivery-node column within ``pickups_deliveries``.
         time_windows: Optional frame of ``(node, open, close)`` arrival windows
             (VRPTW); travel time is taken from the distance matrix plus
-            ``service_time`` per stop.
+            ``service_time`` per stop. Nodes may be names or positional integers.
         node_column: Node column within ``time_windows``.
         open_column: Window-open column within ``time_windows``.
         close_column: Window-close column within ``time_windows``.
@@ -153,19 +158,46 @@ def solve_routing(
         time_horizon: Upper bound on the time dimension (VRPTW).
         penalties: Optional ``(node, penalty)`` frame or ``{node: penalty}`` mapping
             making those visits *optional* — a node may be dropped at its penalty
-            cost (prize-collecting routing). Dropped nodes appear in
-            ``metadata["dropped"]``.
+            cost (prize-collecting routing). Nodes may be names or positional
+            integers. Dropped nodes appear in ``metadata["dropped"]``.
         vehicle_fixed_cost: Optional fixed cost charged per vehicle that is actually
             used, so the solver minimizes the number of vehicles (fleet sizing).
 
     Returns:
         SolveResult whose ``frame`` (same backend as ``df``) is an edge list of
-        trips with route features, plus status and objective (total distance).
+        trips with route features, plus status and objective (total distance). The
+        terminal leg of each vehicle (arrival back at the depot) is flagged with
+        ``isReturn=True``; ``metadata["vehicles_used"]`` counts vehicles that serve
+        at least one non-depot stop, and ``metadata["dropped"]`` lists unserved
+        optional visits.
+
+    Example:
+        Filter out depot rows to get just the served stops in visit order::
+
+            result = ortidy.solve_routing(matrix, vehicles=3)
+            depot = "0"  # the starting_point label
+            stops = result.frame.query("departure != @depot and not isReturn")
     """
+    if span_cost_coefficient is None:
+        # Span cost distorts the objective under fleet sizing; zero it there.
+        span_cost_coefficient = 0 if vehicle_fixed_cost is not None else 100
+
     matrix_nw = _nw.to_nw(df)
     impl = matrix_nw.implementation
     column_names = matrix_nw.columns
     matrix = [[int(round(v)) for v in row] for row in matrix_nw.to_numpy().tolist()]
+
+    name_to_index = {name: i for i, name in enumerate(column_names)}
+
+    def resolve_node(label: Any) -> int:
+        """Accept a matrix column name (str) or a positional node index (int)."""
+        if isinstance(label, str):
+            if label not in name_to_index:
+                raise KeyError(
+                    f"node {label!r} not found among matrix columns {column_names}."
+                )
+            return name_to_index[label]
+        return int(label)
 
     if isinstance(vehicles, int):
         num_vehicles = vehicles
@@ -186,8 +218,7 @@ def solve_routing(
             else None
         )
 
-    if isinstance(starting_point, str):
-        starting_point = column_names.index(starting_point)
+    starting_point = resolve_node(starting_point)
 
     manager = pywrapcp.RoutingIndexManager(
         len(column_names), num_vehicles, starting_point
@@ -244,8 +275,8 @@ def solve_routing(
             _nw.column_to_list(pd_nw, delivery_column),
             strict=True,
         ):
-            p_index = manager.NodeToIndex(int(pickup))
-            d_index = manager.NodeToIndex(int(delivery))
+            p_index = manager.NodeToIndex(resolve_node(pickup))
+            d_index = manager.NodeToIndex(resolve_node(delivery))
             routing.AddPickupAndDelivery(p_index, d_index)
             # Same vehicle for the pair, and pickup must precede delivery.
             solver_cp.Add(routing.VehicleVar(p_index) == routing.VehicleVar(d_index))
@@ -270,7 +301,7 @@ def solve_routing(
             _nw.column_to_list(tw_nw, close_column),
             strict=True,
         ):
-            time_dim.CumulVar(manager.NodeToIndex(int(node))).SetRange(
+            time_dim.CumulVar(manager.NodeToIndex(resolve_node(node))).SetRange(
                 int(open_t), int(close_t)
             )
         # Let every vehicle start anywhere in the horizon, and minimize the
@@ -285,7 +316,9 @@ def solve_routing(
     if penalties is not None:
         # Optional visits: each penalized node may be dropped at its penalty cost.
         for node, penalty in _nw.to_mapping(penalties).items():
-            routing.AddDisjunction([manager.NodeToIndex(int(node))], int(penalty))
+            routing.AddDisjunction(
+                [manager.NodeToIndex(resolve_node(node))], int(penalty)
+            )
 
     if vehicle_fixed_cost is not None:
         routing.SetFixedCostOfAllVehicles(int(vehicle_fixed_cost))
@@ -316,9 +349,12 @@ def solve_routing(
     node_to_name = {i: name for i, name in enumerate(column_names)}
     routes: dict[str, list] = {}
     visited: set[int] = set()
+    vehicles_used = 0
     for vehicle_id in vehicle_ids:
         part = _extract_vehicle_route(routing, manager, solution, vehicle_id, demand)
         visited.update(part["departure"])
+        if any(node != starting_point for node in part["departure"]):
+            vehicles_used += 1
         for key, values in part.items():
             routes.setdefault(key, []).extend(values)
 
@@ -338,6 +374,7 @@ def solve_routing(
         metadata={
             "solver": "ROUTING",
             "num_vehicles": num_vehicles,
+            "vehicles_used": vehicles_used,
             "dropped": dropped,
         },
     )

@@ -85,6 +85,7 @@ bool(result)       # True when OPTIMAL or FEASIBLE — a FEASIBLE solution is a 
 | edge-flow | `solve_routing` (+ `distance_matrix`) | routing (TSP/VRP/CVRP/VRPTW/pickups/optional visits) |
 | interval-schedule | `shift_scheduling` | employee rostering |
 | interval-schedule | `job_shop` | job-shop scheduling |
+| interval-schedule | `interval_assignment` | fixed-time tasks → min-cost resources (rotations, gates) |
 
 See the [docs](https://lucasjamar.github.io/ortidy/) for a worked example of each.
 

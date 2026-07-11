@@ -21,6 +21,7 @@ from ortidy.flow.flow import max_flow, min_cost_flow, shortest_path
 from ortidy.result import SolveResult, SolveStatus
 from ortidy.routing.distance import distance_matrix
 from ortidy.routing.routing import solve_routing
+from ortidy.scheduling.interval_assignment import interval_assignment
 from ortidy.scheduling.job_shop import job_shop
 from ortidy.scheduling.shift_scheduling import shift_scheduling
 from ortidy.transportation.transportation import transportation
@@ -41,6 +42,7 @@ __all__ = [
     "distance_matrix",
     "shift_scheduling",
     "job_shop",
+    "interval_assignment",
     "facility_location",
     "set_cover",
     "blend",
