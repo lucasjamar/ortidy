@@ -40,6 +40,7 @@ Intervals placed on a timeline.
 | --- | --- |
 | `shift_scheduling` | one row per assigned `(workerId, day, shift)` |
 | `job_shop` | tasks + `start` / `end` |
+| `interval_assignment` | tasks + `resourceId` (+ `resourceType` when typed) |
 
 ```{warning}
 If a new feature doesn't fit one of these three shapes, that's a design

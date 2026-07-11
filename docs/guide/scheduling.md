@@ -47,3 +47,30 @@ result.frame[["jobId", "machine", "start", "end"]]
 
 The output adds `start` and `end` to each task — ready to drop into a Gantt chart (see
 the `scheduling.ipynb` [example](../examples.md)).
+
+## Interval assignment
+
+*What it is:* the tasks already have **fixed** start/end times — the question is how
+few (or how cheap a set of) resources can cover them, given a minimum gap between
+consecutive tasks on a resource, and optionally that a resource must be in the right
+*place* to take its next task. *When to use it:* aircraft rotations (gap =
+turnaround), crew lines, gate/stand allocation, driver duty chaining, machine
+reservations. See the [API page](../api/interval-assignment.rst) for the four-regime
+table and the full worked walkthrough in `tail_assignment.ipynb`.
+
+```python
+tasks = pd.DataFrame({
+    "taskId": ["b0", "b1", "b2"],
+    "start":  [385, 400, 615],
+    "end":    [580, 725, 810],
+})
+result = ortidy.interval_assignment(tasks, min_gap=25)
+result.objective                # number of resources used
+result.frame[["taskId", "resourceId"]]
+```
+
+Opt into complexity with optional columns: `start_location_column` /
+`end_location_column` add place-connection chaining; a `resources` frame
+(`resourceType`, `count`, `fixed_cost`) plus an `eligibility` `(taskId, resourceType)`
+frame turn it into a minimum-cost typed-fleet assignment (the objective becomes total
+`fixed_cost`, and it can be `INFEASIBLE` when `count` caps bind).

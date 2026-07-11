@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+* **`interval_assignment`** — assign fixed-time tasks to a minimum-cost set of
+  resources with a minimum gap and optional location chaining (interval-schedule
+  shape). One function covers four regimes: single fleet with/without a base, and
+  mixed typed fleets (with eligibility and count caps) with/without a base. Real
+  use: aircraft rotations, crew lines, gate allocation, duty chaining.
+* `solve_routing` now reports `metadata["vehicles_used"]` and adds an `isReturn`
+  boolean column marking each vehicle's terminal (depot-return) leg.
+
+### Changed
+* `solve_routing` `time_windows` / `penalties` / `pickups_deliveries` now accept
+  node **names** (matrix column labels) as well as positional integers, with a clear
+  `KeyError` on unknown labels — resolving the previous name/index inconsistency.
+* `solve_routing` `span_cost_coefficient` is now `int | None`: it defaults to `100`
+  normally but to `0` when `vehicle_fixed_cost` is set (so span cost no longer
+  distorts fleet sizing); pass a value to override.
+
 ## [0.5.0] - 2026-06-26 - Fill the remaining OR-Tools coverage gaps
 
 ### Added

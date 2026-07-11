@@ -47,6 +47,7 @@ carrying the result frame, a status, the objective, and solve metadata.
    api/assignment-matrix
    api/edge-flow
    api/interval-schedule
+   api/interval-assignment
 
 Try the examples on Binder:
 
